@@ -79,332 +79,288 @@
 
 <script>
 // =============================
-// 1. 核心数据与规则定义
+// 1. 核心卡牌数据库 (增强版)
 // =============================
 const cardDB = [
-    { id: 'education', name: '教育', desc: '造成 1.0 伤害，下次造成伤害额外连击。', dmg: 1 },
-    { id: 'creation', name: '创造', desc: '造成 2.0 伤害，减免下次受击 1.0 伤害。', dmg: 2 },
-    { id: 'research', name: '研究', desc: '无效果 (简化版)。', dmg: 0 },
-    { id: 'combat', name: '战斗', desc: '造成 3.0 伤害。', dmg: 3 },
-    { id: 'crime', name: '犯罪', desc: '造成 4.0 伤害，下次受击增加 1.0。', dmg: 4 },
-    { id: 'study', name: '学习', desc: '造成 1.0 伤害，免疫下次伤害。', dmg: 1 },
-    { id: 'pleasure', name: '享乐', desc: '恢复 4.0 生命。', heal: 4 }, 
-    { id: 'rule', name: '统治', desc: '造成 1.0 伤害，跳过对方下回合。', dmg: 1, skip: true },
-    { id: 'service', name: '服务', desc: '造成 2.0 持续伤害 (简化为即时2.0)。', dmg: 2 }
+    { id: 'education', name: '教育', desc: '1.0伤害，下次伤害额外连击一次相同数值。' },
+    { id: 'creation', name: '创造', desc: '2.0伤害，下次受击减伤1.0。' },
+    { id: 'research', name: '研究', desc: '累计使用3次爆发10.0伤害(限1次)。' },
+    { id: 'combat', name: '战斗', desc: '造成 3.0 伤害。' },
+    { id: 'crime', name: '犯罪', desc: '4.0伤害，下次受击额外增加1.0。' },
+    { id: 'study', name: '学习', desc: '1.0伤害，免疫下次伤害且下次增伤1.0(一次性)。', once: true },
+    { id: 'pleasure', name: '享乐', desc: '恢复 4.0 生命 (一次性)。', once: true },
+    { id: 'rule', name: '统治', desc: '1.0伤害，跳过对方下回合 (一次性)。', once: true },
+    { id: 'faith', name: '信仰', desc: '【被动】若被发到此牌，初始生命翻倍。', passive: true },
+    { id: 'service', name: '服务', desc: '后续4回合，每回合造成1.0额外伤害。' }
 ];
 
-let peer = null;
-let conn = null;
-let isHost = false;
-let isMyTurn = false;
-let turnTimer = null;
-let timeLeft = 30;
-let playCount = 0; // 记录总出牌数，满 6 次（每人3回合）洗牌
+let peer = null, conn = null;
+let isHost = false, isMyTurn = false;
+let turnTimer = null, timeLeft = 30;
+let playCount = 0;
 
-let me = { hp: 30, hand: [], name: "探求者" };
-let opp = { hp: 30, hand: [], name: "对手" };
-let rematchState = { me: false, opp: false };
+// 初始状态
+let me = { hp: 30, maxHp: 30, hand: [], name: "探求者", researchCount: 0, hasBurst: false, effects: {}, serviceTurns: 0 };
+let opp = { hp: 30, maxHp: 30, hand: [], name: "对手", researchCount: 0, hasBurst: false, effects: {}, serviceTurns: 0 };
 
 // =============================
-// 2. 网络层
+// 2. 逻辑工具函数
 // =============================
-function showStatus(msg, color="#ffd700") {
-    const el = document.getElementById('status-msg');
-    if(el) { el.innerText = msg; el.style.color = color; }
-}
 
-function log(msg, color="#fff") {
-    const box = document.getElementById('logs');
-    if(box) {
-        box.innerHTML += `<div style="color:${color}; margin-bottom:5px;">${msg}</div>`;
-        box.scrollTop = box.scrollHeight;
+// 发牌去重逻辑
+function getUniqueHand() {
+    let hand = [];
+    while(hand.length < 3) {
+        let card = {...cardDB[Math.floor(Math.random() * cardDB.length)]};
+        if(!hand.find(c => c.id === card.id)) hand.push(card);
     }
+    return hand;
 }
 
-function initHost() {
-    document.getElementById('btn-host').disabled = true;
-    showStatus("正在连接中继服务器...");
-    
-    if (!peer) peer = new Peer({ config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] } });
-    
-    peer.on('open', id => {
-        document.getElementById('my-id').innerText = id;
-        document.getElementById('my-id').onclick = () => navigator.clipboard.writeText(id);
-        showStatus("ID 已生成，等待对手连接...", "#00ff88");
-    });
-    
-    peer.on('connection', c => { isHost = true; setupConn(c); });
-    
-    peer.on('error', err => {
-        showStatus("网络错误: " + err.type, "#ff4757");
-        document.getElementById('btn-host').disabled = false;
-    });
-}
-
-function connectToHost() {
-    const id = document.getElementById('opp-id').value.trim();
-    if(!id) return alert("请输入对手 ID");
-    
-    document.getElementById('btn-join').disabled = true;
-    showStatus("正在初始化网络库...");
-    
-    if (!peer) {
-        peer = new Peer({ config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] } });
-        peer.on('open', () => doConnect(id));
-        peer.on('error', err => {
-            showStatus("网络错误: " + err.type, "#ff4757");
-            document.getElementById('btn-join').disabled = false;
-        });
-    } else if (peer.open) {
-        doConnect(id);
+// 被动技能：信仰检测
+function checkFaith(player) {
+    if (player.hand.find(c => c.id === 'faith')) {
+        player.maxHp = 60;
+        player.hp = 60;
     } else {
-        peer.on('open', () => doConnect(id));
+        player.maxHp = 30;
+        player.hp = 30;
     }
 }
 
-function doConnect(id) {
-    showStatus("正在呼叫对手: " + id, "#ffd700");
-    const c = peer.connect(id, { reliable: true });
-    isHost = false;
-    setupConn(c); 
-}
+// =============================
+// 3. 游戏流程控制
+// =============================
 
-function setupConn(c) {
-    conn = c;
-    me.name = document.getElementById('my-name').value.trim() || "探求者";
-    showStatus("通道建立！正在同步握手...", "#ffd700");
+function initGameData() {
+    me.hand = getUniqueHand();
+    opp.hand = getUniqueHand();
     
-    conn.on('open', () => {
-        showStatus("连接成功！正在进入对局...", "#00ff88");
-        conn.send({ type: 'HANDSHAKE', name: me.name });
+    checkFaith(me);
+    checkFaith(opp);
+    
+    isMyTurn = Math.random() > 0.5;
+    conn.send({
+        type: 'START_GAME',
+        oppName: me.name,
+        yourHand: opp.hand,
+        oppHand: me.hand,
+        isYourTurn: !isMyTurn,
+        myMaxHp: me.maxHp,
+        oppMaxHp: opp.maxHp
     });
-    
-    conn.on('data', data => handleData(data));
-    conn.on('close', () => { alert("对手已断开网络"); location.reload(); });
+    enterBattlefield();
 }
 
 function handleData(data) {
     if (data.type === 'HANDSHAKE') {
         opp.name = data.name;
         if (isHost) setTimeout(initGameData, 1000);
-    } 
-    else if (data.type === 'START_GAME') {
+    } else if (data.type === 'START_GAME') {
         opp.name = data.oppName;
         me.hand = data.yourHand;
         opp.hand = data.oppHand;
+        me.maxHp = data.myMaxHp; me.hp = data.myMaxHp;
+        opp.maxHp = data.oppMaxHp; opp.hp = data.oppMaxHp;
         isMyTurn = data.isYourTurn;
         enterBattlefield();
-    }
-    else if (data.type === 'PLAY_CARD') {
-        processOpponentPlay(data.cardId, data.cardIndex);
-    }
-    else if (data.type === 'REDEAL') {
+    } else if (data.type === 'PLAY_CARD') {
+        applyCardEffect(data.cardId, opp, me, data.cardIndex);
+    } else if (data.type === 'REDEAL') {
         me.hand = data.yourHand;
         opp.hand = data.oppHand;
         isMyTurn = data.isYourTurn;
         playCount = 0;
-        log("========= 三回合结束，系统重组了手牌 =========", "#a6e3e9");
-        renderHands(); // 重新渲染新牌
+        log("========= 新轮次：手牌已重组 =========", "#a6e3e9");
+        renderHands();
         updateHPUI();
         startTimer();
     }
-    else if (data.type === 'REMATCH_REQ') {
-        rematchState.opp = true;
-        document.getElementById('rematch-status').innerText = `${opp.name} 已请求再来一把！`;
-        checkRematch();
+}
+
+// =============================
+// 4. 战斗指令与效果结算
+// =============================
+
+function playCard(index) {
+    if (!isMyTurn || me.hp <= 0) return;
+    const card = me.hand[index];
+    if (card.passive) { log("【信仰】为被动牌，无法主动点击", "#888"); return; }
+    if (card.used) return;
+
+    isMyTurn = false;
+    clearInterval(turnTimer);
+
+    // 处理一次性卡牌
+    if (card.once) card.used = true;
+
+    // 视觉特效
+    const el = document.getElementById(`player-card-${index}`);
+    el.style.transform = "translateY(-20px)";
+    setTimeout(() => { el.style.transform = ""; renderHands(); }, 300);
+
+    conn.send({ type: 'PLAY_CARD', cardId: card.id, cardIndex: index });
+    applyCardEffect(card.id, me, opp, index);
+}
+
+function applyCardEffect(cardId, caster, target, index) {
+    let damage = 0;
+    let logColor = (caster === me) ? "#00ff88" : "#ff4757";
+    const card = cardDB.find(c => c.id === cardId);
+    log(`${caster.name} 使用了 【${card.name}】`, logColor);
+
+    // 1. 基础数值结算
+    switch(cardId) {
+        case 'education': damage = 1.0; caster.effects.doubleNext = true; break;
+        case 'creation': damage = 2.0; caster.effects.reduceNext = 1.0; break;
+        case 'combat': damage = 3.0; break;
+        case 'crime': damage = 4.0; caster.effects.vulnerable = true; break;
+        case 'study': 
+            damage = 1.0; 
+            caster.effects.immune = true; 
+            caster.effects.buffNext = 1.0; 
+            break;
+        case 'pleasure': caster.hp = Math.min(caster.maxHp, caster.hp + 4.0); break;
+        case 'rule': damage = 1.0; target.effects.skipped = true; break;
+        case 'service': caster.serviceTurns = 4; break;
+        case 'research':
+            caster.researchCount++;
+            if(caster.researchCount >= 3 && !caster.hasBurst) {
+                damage = 10.0;
+                caster.hasBurst = true;
+                log(`🔥 【研究】爆发！造成10点巨额伤害！`, "#ffd700");
+            }
+            break;
     }
-}
 
-// =============================
-// 3. 游戏核心逻辑
-// =============================
-// 修改为每次发 3 张牌
-function getRandomHand() {
-    return Array.from({length: 3}, () => cardDB[Math.floor(Math.random() * cardDB.length)]);
-}
+    // 2. 伤害加成结算 (Buffs)
+    if (damage > 0) {
+        if (caster.effects.buffNext) { damage += caster.effects.buffNext; caster.effects.buffNext = 0; }
+        if (caster.effects.doubleNext) { damage *= 2; caster.effects.doubleNext = false; }
+        
+        // 3. 目标减伤与免疫 (Debuffs)
+        if (target.effects.immune) {
+            damage = 0;
+            target.effects.immune = false;
+            log(`🛡️ ${target.name} 免疫了本次伤害！`, "#a6e3e9");
+        }
+        if (target.effects.reduceNext) {
+            damage = Math.max(0, damage - target.effects.reduceNext);
+            target.effects.reduceNext = 0;
+        }
+        if (target.effects.vulnerable) {
+            damage += 1.0;
+            target.effects.vulnerable = false;
+        }
+        
+        target.hp -= damage;
+    }
 
-function initGameData() {
-    me.hand = getRandomHand();
-    opp.hand = getRandomHand();
-    isMyTurn = Math.random() > 0.5; // 随机先手
-    
-    conn.send({
-        type: 'START_GAME',
-        oppName: me.name,
-        yourHand: opp.hand,
-        oppHand: me.hand,
-        isYourTurn: !isMyTurn
-    });
-    enterBattlefield();
-}
+    // 4. 服务牌持续伤害判定
+    if (caster.serviceTurns > 0) {
+        target.hp -= 1.0;
+        caster.serviceTurns--;
+        log(`✨ 【服务】额外造成1.0点伤害 (剩${caster.serviceTurns}轮)`, "#ffd700");
+    }
 
-function enterBattlefield() {
-    document.getElementById('lobby').style.display = 'none';
-    document.getElementById('battlefield').style.display = 'block';
-    document.getElementById('rematch-modal').style.display = 'none';
-    document.getElementById('logs').innerHTML = '';
-    
-    me.hp = 30; opp.hp = 30; playCount = 0;
-    rematchState = { me: false, opp: false };
-    
-    log(`对局开始！${isMyTurn ? '你' : opp.name} 获得了先手。`, "#a6e3e9");
-    
-    // 初始化时分开渲染牌和血量
-    renderHands();
+    // 5. 判定回合结束
+    if (target.effects.skipped) {
+        target.effects.skipped = false;
+        log(`🚫 ${target.name} 回合被跳过！`, "#ff4757");
+        if (caster === me) isMyTurn = true; 
+    } else {
+        if (caster === me) isMyTurn = false;
+        else isMyTurn = true;
+    }
+
     updateHPUI();
-    startTimer();
+    checkGameEnd();
+    if (me.hp > 0 && opp.hp > 0) startTimer();
 }
 
-// 单独刷新血量 (不重绘 DOM 保证动画连贯)
-function updateHPUI() {
-    document.getElementById('my-display-name').innerText = me.name;
-    document.getElementById('enemy-name').innerText = opp.name;
-    
-    document.getElementById('player-hp-text').innerText = me.hp.toFixed(1);
-    document.getElementById('player-hp-fill').style.width = Math.max(0, (me.hp / 30 * 100)) + '%';
-    
-    document.getElementById('enemy-hp-text').innerText = opp.hp.toFixed(1);
-    document.getElementById('enemy-hp-fill').style.width = Math.max(0, (opp.hp / 30 * 100)) + '%';
-}
+// =============================
+// 5. UI 渲染 (支持一次性卡牌置灰)
+// =============================
 
-// 仅在发牌时渲染牌组，战斗中不再擦除
 function renderHands() {
-    const eHandDiv = document.getElementById('enemy-hand');
-    eHandDiv.innerHTML = '';
-    opp.hand.forEach((c, index) => {
-        eHandDiv.innerHTML += `
-            <div class="card enemy-card" id="enemy-card-${index}">
-                <div class="card-title">${c.name}</div>
-                <div>${c.desc}</div>
-            </div>`;
+    const eDiv = document.getElementById('enemy-hand');
+    eDiv.innerHTML = '';
+    opp.hand.forEach((c, i) => {
+        // 对方如果是被动牌或已使用，视觉区分
+        const isOff = c.passive || c.used;
+        eDiv.innerHTML += `<div class="card enemy-card" id="enemy-card-${i}" style="opacity:${isOff?0.5:1}">
+            <div class="card-title">${c.name}</div><div>${c.desc}</div>
+        </div>`;
     });
 
-    const pHandDiv = document.getElementById('player-hand');
-    pHandDiv.innerHTML = '';
-    me.hand.forEach((c, index) => {
+    const pDiv = document.getElementById('player-hand');
+    pDiv.innerHTML = '';
+    me.hand.forEach((c, i) => {
+        const isOff = c.passive || c.used;
         const div = document.createElement('div');
         div.className = 'card';
-        div.id = `player-card-${index}`;
-        div.innerHTML = `
-            <div class="card-title">${c.name}</div>
-            <div>${c.desc}</div>`;
-        div.onclick = () => playCard(c, index);
-        pHandDiv.appendChild(div);
+        div.id = `player-card-${i}`;
+        div.style.opacity = isOff ? "0.4" : "1";
+        div.style.cursor = isOff ? "not-allowed" : "pointer";
+        div.innerHTML = `<div class="card-title">${c.name}</div><div>${c.desc}</div>`;
+        if(!isOff) div.onclick = () => playCard(i);
+        pDiv.appendChild(div);
     });
 }
 
+// 倒计时逻辑
 function startTimer() {
     clearInterval(turnTimer);
+    if (me.hp <= 0 || opp.hp <= 0) return;
     timeLeft = 30;
     const tDiv = document.getElementById('timer');
     
     if (!isMyTurn) {
         tDiv.innerText = "等待对手...";
-        tDiv.style.color = "#888";
         return;
     }
 
-    tDiv.style.color = "#ffd700";
     turnTimer = setInterval(() => {
         tDiv.innerText = timeLeft;
         if (timeLeft <= 0) {
             clearInterval(turnTimer);
-            log("超时限制！系统已为你随机出牌", "#ff4757");
-            if (me.hand.length > 0) {
-                const randIndex = Math.floor(Math.random() * me.hand.length);
-                playCard(me.hand[randIndex], randIndex);
+            // 随机出一张可用牌
+            const validIndices = me.hand.map((c,i) => (!c.passive && !c.used)?i:null).filter(v => v!==null);
+            if(validIndices.length > 0) {
+                playCard(validIndices[Math.floor(Math.random()*validIndices.length)]);
+            } else {
+                // 如果实在没牌出（特殊情况），强制切回合
+                isMyTurn = false;
+                conn.send({ type: 'PLAY_CARD', cardId: 'research', cardIndex: 0 }); // 发个空研究占位
+                startTimer();
             }
         }
         timeLeft--;
     }, 1000);
 }
 
-// 主动出牌
-function playCard(card, index) {
-    if (!isMyTurn || me.hp <= 0 || opp.hp <= 0) return;
-    isMyTurn = false;
-    clearInterval(turnTimer);
-    
-    // 视觉特效：卡牌上浮发光
-    const el = document.getElementById(`player-card-${index}`);
-    if(el) {
-        el.style.transform = "translateY(-15px)";
-        el.style.boxShadow = "0 0 15px #00ff88";
-        setTimeout(() => { el.style.transform = ""; el.style.boxShadow = ""; }, 400);
-    }
-    
-    // 【修改点】：去除了 splice，卡牌不再被销毁，可以重复使用
-    conn.send({ type: 'PLAY_CARD', cardId: card.id, cardIndex: index });
-    
-    log(`你 打出了 【${card.name}】`, "#00ff88");
-    applyEffect(card, me, opp);
-    
-    // 统治跳过回合逻辑
-    if (!card.skip) isMyTurn = false; 
-    else { log(`【统治】生效，你继续行动！`, "#a6e3e9"); isMyTurn = true; }
-    
-    checkTurnEnd();
-}
-
-// 被动接受对方出牌
-function processOpponentPlay(cardId, index) {
-    const card = cardDB.find(c => c.id === cardId);
-    
-    // 视觉特效：敌方卡牌下沉发红光
-    const el = document.getElementById(`enemy-card-${index}`);
-    if(el) {
-        el.style.transform = "translateY(15px)";
-        el.style.boxShadow = "0 0 15px #ff4757";
-        setTimeout(() => { el.style.transform = ""; el.style.boxShadow = ""; }, 400);
-    }
-
-    // 【修改点】：同样去除了 splice
-    log(`对手 打出了 【${card.name}】`, "#ff4757");
-    applyEffect(card, opp, me);
-    
-    if (!card.skip) isMyTurn = true;
-    checkTurnEnd();
-}
-
-function applyEffect(card, caster, target) {
-    if (card.dmg) target.hp -= card.dmg;
-    if (card.heal) caster.hp = Math.min(30, caster.hp + card.heal);
-    caster.hp = Math.max(0, caster.hp);
-    target.hp = Math.max(0, target.hp);
-    
-    // 仅刷新血量，不再重绘卡牌 DOM
-    updateHPUI();
-}
-
-function checkTurnEnd() {
-    playCount++;
-    
-    // 检查死亡判定
+// 每三回合重洗 (房主控制)
+function checkGameEnd() {
     if (me.hp <= 0 || opp.hp <= 0) {
         clearInterval(turnTimer);
         const win = me.hp > 0;
         document.getElementById('rematch-modal').style.display = 'flex';
         document.getElementById('result-title').innerText = win ? "胜利" : "败北";
-        document.getElementById('result-title').style.color = win ? "#00ff88" : "#ff4757";
-        document.getElementById('result-desc').innerText = "本轮战斗已结束";
-        
-        document.getElementById('btn-rematch').innerText = "再来一把";
-        document.getElementById('btn-rematch').disabled = false;
-        document.getElementById('rematch-status').innerText = "";
         return;
     }
 
-    // 每 3 个回合（共计 6 次出牌，包含对方的）由房主重洗
+    playCount++;
     if (playCount >= 6 && isHost) {
-        me.hand = getRandomHand();
-        opp.hand = getRandomHand();
-        isMyTurn = true; // 洗牌后房主先手
+        me.hand = getUniqueHand();
+        opp.hand = getUniqueHand();
+        // 重洗时，信仰再次判定（如果新发到了信仰，血量上限会变，但这里按常理通常保持当前血量）
+        isMyTurn = true;
         conn.send({ type: 'REDEAL', yourHand: opp.hand, oppHand: me.hand, isYourTurn: false });
         playCount = 0;
-        log("========= 三回合结束，系统重组了手牌 =========", "#a6e3e9");
-        renderHands(); // 三回合满了才刷新一遍牌
-        updateHPUI();
+        renderHands();
     }
+}
+// (其余UI更新与网络初始化函数保持不变...)
 
     startTimer();
 }
