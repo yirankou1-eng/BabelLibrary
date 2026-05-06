@@ -153,6 +153,11 @@ function shuffle(array) {
 }
 
 function initCardBattle() {
+    // 【新增的安全垫】：如果存档里没有这两个数组，就帮它建一个空的
+    if (!gameData.babelPlayerCards) gameData.babelPlayerCards = [];
+    if (!gameData.babelEnemyCards) gameData.babelEnemyCards = [];
+
+    // 原来的发牌逻辑
     if (gameData.babelPlayerCards.length === 0) {
         let pDeck = shuffle([...cardDatabase]).slice(0, 3);
         let eDeck = shuffle([...cardDatabase]).slice(0, 3);
