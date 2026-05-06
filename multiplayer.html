@@ -2,119 +2,123 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>巴别塔 - 联机模式</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { background: #0a0a0a; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; user-select: none; }
-        .panel { background: #1a1a1a; border: 2px solid #a6e3e9; border-radius: 10px; padding: 20px; max-width: 600px; margin: 20px auto; position: relative; }
+        body { background: #0a0a0a; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 10px; user-select: none; }
+        .panel { background: #1a1a1a; border: 2px solid #a6e3e9; border-radius: 10px; padding: 15px; max-width: 600px; margin: 10px auto; position: relative; box-sizing: border-box; }
+        
+        /* 移动端 ID 点击反馈 */
+        #my-id { color:#00ff88; cursor:pointer; text-decoration: underline; word-break: break-all; display: block; margin: 10px 0; }
+        
         button { background: #a6e3e9; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 5px; margin: 5px; transition: 0.2s; }
         button:hover { background: #85c1c7; }
         button:disabled { background: #555; color: #888; cursor: not-allowed; }
-        input { padding: 10px; border: 1px solid #a6e3e9; border-radius: 5px; background: #000; color: #fff; text-align: center; margin: 5px 0; width: 80%; }
+        input { padding: 10px; border: 1px solid #a6e3e9; border-radius: 5px; background: #000; color: #fff; text-align: center; margin: 5px 0; width: 90%; font-size: 16px; }
         
         #battlefield, #rematch-modal { display: none; }
-        .hand { display: flex; justify-content: center; gap: 10px; margin: 15px 0; min-height: 140px; }
-        .card { width: 100px; height: 145px; background: #2c3e50; border: 2px solid #a6e3e9; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 12px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s ease; box-sizing: border-box; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(166,227,233,0.3); }
+        .hand { display: flex; justify-content: center; gap: 8px; margin: 10px 0; min-height: 120px; flex-wrap: nowrap; }
         
+        /* 卡牌基础样式 */
+        .card { width: 30%; max-width: 100px; height: 140px; background: #2c3e50; border: 2px solid #a6e3e9; border-radius: 8px; padding: 8px; cursor: pointer; font-size: 11px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s ease; box-sizing: border-box; overflow: hidden; }
+        .card:hover { transform: translateY(-5px); }
         .enemy-card { border-color: #ff4757; cursor: default; background: #3a1c1e; }
-        .enemy-card:hover { transform: none; box-shadow: none; }
         
-        /* 状态卡牌样式 */
-        .card.disabled { opacity: 0.4; cursor: not-allowed; border-color: #888 !important; pointer-events: none; }
+        /* 状态卡牌 */
+        .card.disabled { opacity: 0.3; cursor: not-allowed; border-color: #888 !important; pointer-events: none; }
         .card.passive { border-color: #ffd700; background: #4a3b00; cursor: not-allowed; }
+        .card-title { font-weight: bold; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 3px; }
         
-        .card-title { font-weight: bold; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; }
-        
-        .hp-bar { width: 100%; background: #333; height: 15px; border-radius: 10px; overflow: hidden; margin: 5px 0; }
+        /* 响应式调整：针对手机屏幕 */
+        @media screen and (max-width: 480px) {
+            .card { height: 120px; padding: 5px; font-size: 10px; }
+            .card-title { font-size: 11px; }
+            #timer { font-size: 22px !important; }
+            .panel { padding: 10px; }
+        }
+
+        .hp-bar { width: 100%; background: #333; height: 12px; border-radius: 10px; overflow: hidden; margin: 5px 0; }
         .hp-fill { height: 100%; width: 100%; transition: width 0.3s; }
         .enemy-hp-fill { background: #ff4757; }
         .player-hp-fill { background: #00ff88; }
         
-        #timer { font-size: 28px; font-weight: bold; margin: 10px 0; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
-        #logs { height: 140px; overflow-y: auto; background: #000; border: 1px solid #444; padding: 10px; font-size: 13px; text-align: left; border-radius: 5px; }
-        #rematch-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; flex-direction: column; justify-content: center; align-items: center; border-radius: 10px; }
+        #timer { font-size: 28px; font-weight: bold; margin: 5px 0; color: #ffd700; }
+        #logs { height: 100px; overflow-y: auto; background: #000; border: 1px solid #444; padding: 8px; font-size: 12px; text-align: left; border-radius: 5px; margin: 10px 0; }
+        #rematch-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; justify-content: center; align-items: center; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <button onclick="window.location.href='index.html'" style="position:absolute; top:20px; left:20px; background:#444; color:#fff;">&lt; 离开联机</button>
+    <button onclick="window.location.href='index.html'" style="position:absolute; top:10px; left:10px; background:#444; color:#fff; padding:5px 10px; font-size:12px; z-index:10;">退出</button>
 
-    <div id="lobby" class="panel">
-        <h2 style="color: #a6e3e9;">联机终端</h2>
-        <input type="text" id="my-name" placeholder="输入临时昵称..." value="探求者">
-        <br><br>
-        <button onclick="initHost()" id="btn-host">生成并作为房主</button>
-        <p>我的 ID: <span id="my-id" style="color:#00ff88; cursor:pointer;">等待生成...</span></p>
-        <hr style="border-color:#444; margin:20px 0;">
-        <input type="text" id="opp-id" placeholder="粘贴对方的 ID...">
+    <div id="lobby" class="panel" style="margin-top: 40px;">
+        <h2 style="color: #a6e3e9; margin-top:0;">联机终端</h2>
+        <input type="text" id="my-name" placeholder="昵称..." value="探求者">
+        <br>
+        <button onclick="initHost()" id="btn-host">作为房主</button>
+        <p style="font-size:12px; color:#888;">点击下方ID复制:</p>
+        <span id="my-id">等待生成...</span>
+        <hr style="border-color:#444;">
+        <input type="text" id="opp-id" placeholder="输入对手 ID...">
         <button onclick="connectToHost()" id="btn-join">连接对手</button>
-        <p id="status-msg" style="color:#ffd700; font-weight:bold;"></p>
+        <p id="status-msg" style="color:#ffd700; font-size:14px;"></p>
     </div>
 
     <div id="battlefield" class="panel">
         <div id="rematch-modal">
             <h2 id="result-title">游戏结束</h2>
             <p id="result-desc"></p>
-            <div>
-                <button id="btn-rematch" onclick="requestRematch()">再来一把</button>
-                <button onclick="window.location.href='index.html'" style="background:#444; color:#fff;">退出联机</button>
-            </div>
+            <button id="btn-rematch" onclick="requestRematch()">再来一把</button>
+            <button onclick="window.location.href='index.html'" style="background:#444; color:#fff;">退出</button>
             <p id="rematch-status" style="color:#a6e3e9; font-size:12px; margin-top:10px;"></p>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-            <h3 id="enemy-name" style="color:#ff4757; margin:0;">对手</h3>
-            <span style="font-size:14px;">HP: <span id="enemy-hp-text">30.0</span> / <span id="enemy-max-text">30.0</span></span>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 id="enemy-name" style="color:#ff4757; margin:0; font-size:16px;">对手</h3>
+            <span style="font-size:12px;">HP: <span id="enemy-hp-text">30.0</span> / <span id="enemy-max-text">30.0</span></span>
         </div>
         <div class="hp-bar"><div id="enemy-hp-fill" class="hp-fill enemy-hp-fill"></div></div>
-        
         <div id="enemy-hand" class="hand"></div>
-        <div id="timer">--</div>
-        <div id="logs"></div>
-        <div id="player-hand" class="hand"></div>
         
+        <div id="timer">30</div>
+        <div id="logs"></div>
+        
+        <div id="player-hand" class="hand"></div>
         <div class="hp-bar"><div id="player-hp-fill" class="hp-fill player-hp-fill"></div></div>
-        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <h3 id="my-display-name" style="color:#00ff88; margin:0;">我</h3>
-            <span style="font-size:14px;">HP: <span id="player-hp-text">30.0</span> / <span id="player-max-text">30.0</span></span>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 id="my-display-name" style="color:#00ff88; margin:0; font-size:16px;">我</h3>
+            <span style="font-size:12px;">HP: <span id="player-hp-text">30.0</span> / <span id="player-max-text">30.0</span></span>
         </div>
     </div>
 
 <script>
 // =============================
-// 1. 卡牌数据库
+// 1. 卡牌数据库 (更新规则)
 // =============================
 const cardDB = [
-    { id: 'education', name: '教育', desc: '造成 1.0 伤害，下次造成伤害额外造成同等数值。', dmg: 1 },
-    { id: 'creation', name: '创造', desc: '造成 2.0 伤害，使敌方下次伤害减去 1.0。', dmg: 2 },
-    { id: 'research', name: '研究', desc: '无效果，累计3次后爆发 10.0 伤害(单局限1次)。', dmg: 0 },
+    { id: 'education', name: '教育', desc: '1.0伤害。下次伤害触发连击。', dmg: 1 },
+    { id: 'creation', name: '创造', desc: '2.0伤害。下次受击减1.0。', dmg: 2 },
+    { id: 'research', name: '研究', desc: '累计2次爆发8.0伤害(限1次)。', dmg: 0 },
     { id: 'combat', name: '战斗', desc: '造成 3.0 伤害。', dmg: 3 },
-    { id: 'crime', name: '犯罪', desc: '造成 4.0 伤害，下次自己受到的伤害增加 1.0。', dmg: 4 },
-    { id: 'study', name: '学习', desc: '造成 1.0 伤害，免疫下次受伤，下次伤害加 1.0 [一次性]', dmg: 1, once: true },
-    { id: 'pleasure', name: '享乐', desc: '恢复 5.0 生命 [一次性]', heal: 5, once: true },
-    { id: 'rule', name: '统治', desc: '造成 1.0 伤害，跳过对方下回合 [一次性]', dmg: 1, once: true, skip: true },
-    { id: 'faith', name: '信仰', desc: '【被动】若抽到此牌，初始生命翻倍。不可主动使用', passive: true },
-    { id: 'service', name: '服务', desc: '使用后的四个回合内，每回合额外造成 1.0 伤害。', dmg: 0 }
+    { id: 'crime', name: '犯罪', desc: '4.0伤害。下回合受击加1.0。', dmg: 4 },
+    { id: 'study', name: '学习', desc: '1.0伤害。下次免疫且增伤1.0 [1次]', dmg: 1, once: true },
+    { id: 'pleasure', name: '享乐', desc: '恢复 5.0 生命 [1次]', heal: 5, once: true },
+    { id: 'rule', name: '统治', desc: '1.0伤害。跳过对方回合 [1次]', dmg: 1, once: true, skip: true },
+    { id: 'faith', name: '信仰', desc: '【被动】首轮抽到生命翻倍。不可主动用', passive: true },
+    { id: 'service', name: '服务', desc: '后续4回合每轮1.0附加伤害。', dmg: 0 }
 ];
 
 let peer = null, conn = null;
 let isHost = false, isMyTurn = false;
 let turnTimer = null, timeLeft = 30, playCount = 0;
 
-// 创建带状态机的玩家对象
 function createPlayer(name) {
     return {
         name: name, hp: 30, maxHp: 30, hand: [], usedCards: [],
         effects: {
-            educateNext: false,     // 教育：连击
-            reduceNextTaken: 0,     // 创造：减伤
-            researchCount: 0,       // 研究：层数
-            researchDone: false,    // 研究：是否已爆发
-            vulnNextTaken: 0,       // 犯罪：易伤
-            immuneNext: false,      // 学习：免疫
-            boostNextDealt: 0,      // 学习：增伤
-            serviceTurns: 0         // 服务：持续回合
+            educateNext: false, reduceNextTaken: 0, researchCount: 0, researchDone: false,
+            vulnNextTaken: 0, immuneNext: false, boostNextDealt: 0, serviceTurns: 0
         }
     };
 }
@@ -124,130 +128,116 @@ let opp = createPlayer("对手");
 let rematchState = { me: false, opp: false };
 
 // =============================
-// 2. 网络底层逻辑
+// 2. 网络层 (修复ID复制)
 // =============================
 function showStatus(msg, color="#ffd700") { const el = document.getElementById('status-msg'); if(el) { el.innerText = msg; el.style.color = color; } }
-function log(msg, color="#fff") { const box = document.getElementById('logs'); if(box) { box.innerHTML += `<div style="color:${color}; margin-bottom:5px;">${msg}</div>`; box.scrollTop = box.scrollHeight; } }
+function log(msg, color="#fff") { const box = document.getElementById('logs'); if(box) { box.innerHTML += `<div style="color:${color}; margin-bottom:4px;">${msg}</div>`; box.scrollTop = box.scrollHeight; } }
 
 function initHost() {
-    document.getElementById('btn-host').disabled = true; showStatus("正在连接服务器...");
-    if (!peer) peer = new Peer({ config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] } });
-    peer.on('open', id => { document.getElementById('my-id').innerText = id; showStatus("ID 已生成...", "#00ff88"); });
+    document.getElementById('btn-host').disabled = true; showStatus("生成ID中...");
+    peer = new Peer({ config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] } });
+    peer.on('open', id => { 
+        const idSpan = document.getElementById('my-id');
+        idSpan.innerText = id;
+        idSpan.onclick = () => {
+            navigator.clipboard.writeText(id).then(() => alert("ID已复制"));
+        };
+        showStatus("等待连接...", "#00ff88"); 
+    });
     peer.on('connection', c => { isHost = true; setupConn(c); });
 }
 
 function connectToHost() {
     const id = document.getElementById('opp-id').value.trim(); if(!id) return;
-    document.getElementById('btn-join').disabled = true; showStatus("正在呼叫...");
-    if (!peer) { peer = new Peer({ config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] } }); peer.on('open', () => doConnect(id)); }
-    else if (peer.open) { doConnect(id); } else { peer.on('open', () => doConnect(id)); }
+    document.getElementById('btn-join').disabled = true;
+    if (!peer) peer = new Peer();
+    const c = peer.connect(id, { reliable: true });
+    isHost = false; setupConn(c);
 }
 
-function doConnect(id) { const c = peer.connect(id, { reliable: true }); isHost = false; setupConn(c); }
-
 function setupConn(c) {
-    conn = c; me.name = document.getElementById('my-name').value.trim() || "探求者"; showStatus("通道建立！", "#ffd700");
-    conn.on('open', () => { showStatus("连接成功！", "#00ff88"); conn.send({ type: 'HANDSHAKE', name: me.name }); });
+    conn = c; me.name = document.getElementById('my-name').value.trim() || "探求者";
+    conn.on('open', () => { conn.send({ type: 'HANDSHAKE', name: me.name }); });
     conn.on('data', data => handleData(data));
 }
 
 function handleData(data) {
-    if (data.type === 'HANDSHAKE') { opp.name = data.name; if (isHost) setTimeout(initGameData, 500); }
+    if (data.type === 'HANDSHAKE') { opp.name = data.name; if (isHost) setTimeout(() => initGameData(true), 500); }
     else if (data.type === 'START_GAME') {
         me = createPlayer(me.name); opp = createPlayer(data.oppName);
         me.hand = data.yourHand; opp.hand = data.oppHand; isMyTurn = data.isYourTurn;
-        enterBattlefield();
+        enterBattlefield(true); // 只有首局触发信仰
     }
     else if (data.type === 'PLAY_CARD') { processOpponentPlay(data.cardId, data.cardIndex); }
     else if (data.type === 'SKIP_TURN') { processOpponentSkip(); }
     else if (data.type === 'REDEAL') {
         me.hand = data.yourHand; opp.hand = data.oppHand; isMyTurn = data.isYourTurn;
         me.usedCards = []; opp.usedCards = []; playCount = 0;
-        log("========= 三回合结束，系统重组了手牌 =========", "#a6e3e9");
-        applyFaithLogic(); renderHands(); updateHPUI(); startTimer();
+        log("========= 三回合结束，手牌已重组 =========", "#a6e3e9");
+        renderHands(); updateHPUI(); startTimer();
     }
     else if (data.type === 'REMATCH_REQ') { rematchState.opp = true; checkRematch(); }
 }
 
 // =============================
-// 3. 游戏机制与状态机
+// 3. 核心机制
 // =============================
 
-// 抽取3张互不重复的卡牌
-function getRandomHand() {
-    let deck = [...cardDB];
+// 抽牌算法：去重，且根据是否首轮决定是否有“信仰”
+function getRandomHand(isFirstRound) {
+    let deck = isFirstRound ? [...cardDB] : cardDB.filter(c => c.id !== 'faith');
     let hand = [];
     for(let i=0; i<3; i++) {
         let idx = Math.floor(Math.random() * deck.length);
         hand.push(deck[idx]);
-        deck.splice(idx, 1); // 抽出后删除，确保不重复
+        deck.splice(idx, 1);
     }
     return hand;
 }
 
-function initGameData() {
-    let pHand = getRandomHand(), eHand = getRandomHand();
+function initGameData(isFirst) {
+    let pHand = getRandomHand(isFirst), eHand = getRandomHand(isFirst);
     isMyTurn = Math.random() > 0.5;
     conn.send({ type: 'START_GAME', oppName: me.name, yourHand: eHand, oppHand: pHand, isYourTurn: !isMyTurn });
-    
     me = createPlayer(me.name); opp = createPlayer(opp.name);
     me.hand = pHand; opp.hand = eHand;
-    enterBattlefield();
+    enterBattlefield(isFirst);
 }
 
-function enterBattlefield() {
+function enterBattlefield(checkFaith) {
     document.getElementById('lobby').style.display = 'none'; document.getElementById('battlefield').style.display = 'block';
-    document.getElementById('rematch-modal').style.display = 'none'; document.getElementById('logs').innerHTML = '';
-    playCount = 0; rematchState = { me: false, opp: false };
-    
-    log(`对局开始！${isMyTurn ? '你' : opp.name} 获得了先手。`, "#a6e3e9");
-    applyFaithLogic(); // 结算信仰的翻倍效果
-    renderHands(); updateHPUI(); startTimer();
+    document.getElementById('rematch-modal').style.display = 'none';
+    me.hp = 30; opp.hp = 30; me.maxHp = 30; opp.maxHp = 30;
+    if (checkFaith) applyFaithLogic(); 
+    updateHPUI(); renderHands(); startTimer();
 }
 
-// 检查双方手牌中是否有“信仰”
 function applyFaithLogic() {
-    if (me.hand.some(c => c.id === 'faith')) {
-        me.maxHp *= 2; me.hp = me.maxHp; log(`你 受到【信仰】加持，生命翻倍！`, "#ffd700");
-    }
-    if (opp.hand.some(c => c.id === 'faith')) {
-        opp.maxHp *= 2; opp.hp = opp.maxHp; log(`对手 受到【信仰】加持，生命翻倍！`, "#ff4757");
-    }
+    if (me.hand.some(c => c.id === 'faith')) { me.maxHp = 60; me.hp = 60; log("【信仰】使你的初始生命翻倍！", "#ffd700"); }
+    if (opp.hand.some(c => c.id === 'faith')) { opp.maxHp = 60; opp.hp = 60; log("对手【信仰】触发，生命翻倍！", "#ff4757"); }
 }
 
 function updateHPUI() {
-    document.getElementById('my-display-name').innerText = me.name;
-    document.getElementById('enemy-name').innerText = opp.name;
-    
     document.getElementById('player-hp-text').innerText = me.hp.toFixed(1);
     document.getElementById('player-max-text').innerText = me.maxHp.toFixed(1);
-    document.getElementById('player-hp-fill').style.width = Math.min(100, Math.max(0, (me.hp / me.maxHp * 100))) + '%';
-    
+    document.getElementById('player-hp-fill').style.width = (me.hp / me.maxHp * 100) + '%';
     document.getElementById('enemy-hp-text').innerText = opp.hp.toFixed(1);
     document.getElementById('enemy-max-text').innerText = opp.maxHp.toFixed(1);
-    document.getElementById('enemy-hp-fill').style.width = Math.min(100, Math.max(0, (opp.hp / opp.maxHp * 100))) + '%';
+    document.getElementById('enemy-hp-fill').style.width = (opp.hp / opp.maxHp * 100) + '%';
 }
 
 function renderHands() {
     const eHandDiv = document.getElementById('enemy-hand'); eHandDiv.innerHTML = '';
-    opp.hand.forEach((c, index) => {
-        let classes = 'card enemy-card';
-        if (c.passive) classes += ' passive';
-        else if (c.once && opp.usedCards.includes(index)) classes += ' disabled';
-        eHandDiv.innerHTML += `<div class="${classes}" id="enemy-card-${index}"><div class="card-title">${c.name}</div><div>${c.desc}</div></div>`;
+    opp.hand.forEach((c, i) => {
+        let cls = 'card enemy-card' + (c.passive?' passive':'') + ((c.once&&opp.usedCards.includes(i))?' disabled':'');
+        eHandDiv.innerHTML += `<div class="${cls}"><div class="card-title">${c.name}</div><div>${c.desc}</div></div>`;
     });
-
     const pHandDiv = document.getElementById('player-hand'); pHandDiv.innerHTML = '';
-    me.hand.forEach((c, index) => {
+    me.hand.forEach((c, i) => {
         let div = document.createElement('div');
-        let classes = 'card';
-        if (c.passive) classes += ' passive';
-        else if (c.once && me.usedCards.includes(index)) classes += ' disabled';
-        div.className = classes; div.id = `player-card-${index}`;
+        div.className = 'card' + (c.passive?' passive':'') + ((c.once&&me.usedCards.includes(i))?' disabled':'');
         div.innerHTML = `<div class="card-title">${c.name}</div><div>${c.desc}</div>`;
-        if (!c.passive && !(c.once && me.usedCards.includes(index))) {
-            div.onclick = () => playCard(c, index);
-        }
+        if(!c.passive && !(c.once&&me.usedCards.includes(i))) div.onclick = () => playCard(c, i);
         pHandDiv.appendChild(div);
     });
 }
@@ -255,187 +245,91 @@ function renderHands() {
 function startTimer() {
     clearInterval(turnTimer); timeLeft = 30;
     const tDiv = document.getElementById('timer');
-    if (!isMyTurn) { tDiv.innerText = "等待对手..."; tDiv.style.color = "#888"; return; }
-    tDiv.style.color = "#ffd700";
-    
+    if(!isMyTurn) { tDiv.innerText = "等待对手"; return; }
     turnTimer = setInterval(() => {
         tDiv.innerText = timeLeft;
-        if (timeLeft <= 0) {
+        if(timeLeft <= 0) {
             clearInterval(turnTimer);
-            log("超时！系统随机出牌", "#ff4757");
-            
-            // 找出所有可以打的牌（非被动，且没被用过的一次性牌）
-            let available = me.hand.map((c, i) => i).filter(i => !me.hand[i].passive && !(me.hand[i].once && me.usedCards.includes(i)));
-            
-            if (available.length > 0) {
-                let randIdx = available[Math.floor(Math.random() * available.length)];
-                playCard(me.hand[randIdx], randIdx);
-            } else {
-                conn.send({ type: 'SKIP_TURN' });
-                log("你无牌可出，跳过回合！", "#888");
-                isMyTurn = false; checkTurnEnd(me, opp);
-            }
+            let avail = me.hand.map((c,i)=>i).filter(i=>!me.hand[i].passive && !(me.hand[i].once && me.usedCards.includes(i)));
+            if(avail.length>0) playCard(me.hand[avail[0]], avail[0]);
+            else { conn.send({type:'SKIP_TURN'}); isMyTurn=false; checkTurnEnd(me,opp); }
         }
         timeLeft--;
     }, 1000);
 }
 
-// =============================
-// 4. 伤害结算与特效
-// =============================
-
-// 核心计算器
-function executeDamage(amount, target) {
-    if (amount <= 0) return 0;
-    if (target.effects.immuneNext) {
-        log(`> ${target.name} 的【学习】使其免疫了本次伤害！`, "#00ff88");
-        target.effects.immuneNext = false;
-        return 0;
-    }
-    let final = amount;
-    if (target.effects.reduceNextTaken > 0) { final -= target.effects.reduceNextTaken; target.effects.reduceNextTaken = 0; }
-    if (target.effects.vulnNextTaken > 0) { final += target.effects.vulnNextTaken; target.effects.vulnNextTaken = 0; }
-    
-    final = Math.max(0, final);
-    target.hp -= final;
+function executeDamage(amt, target) {
+    if (amt <= 0) return 0;
+    if (target.effects.immuneNext) { log(`> ${target.name} 免疫了伤害！`, "#00ff88"); target.effects.immuneNext = false; return 0; }
+    let final = amt - target.effects.reduceNextTaken + target.effects.vulnNextTaken;
+    target.effects.reduceNextTaken = 0; target.effects.vulnNextTaken = 0;
+    final = Math.max(0, final); target.hp -= final;
     return final;
 }
 
-// 执行卡牌
 function applyEffect(card, caster, target) {
-    let baseDmg = card.dmg || 0;
-    let heal = card.heal || 0;
-
-    // 1. 研究特殊结算
+    let base = card.dmg || 0;
+    // 研究：2次爆发8.0
     if (card.id === 'research' && !caster.effects.researchDone) {
         caster.effects.researchCount++;
-        if (caster.effects.researchCount >= 3) {
-            baseDmg = 10.0; caster.effects.researchDone = true;
-            log(`> 【研究】大成！爆发出毁灭性伤害！`, "#ff8c00");
-        } else {
-            log(`> 【研究】层数 +1 (当前 ${caster.effects.researchCount}/3)`, "#aaa");
-        }
+        if (caster.effects.researchCount >= 2) { base = 8.0; caster.effects.researchDone = true; log("【研究】爆发！造成8.0伤害！", "#ff8c00"); }
+        else log(`【研究】积累中 (${caster.effects.researchCount}/2)`, "#aaa");
     }
-
-    // 2. 学习：自己伤害增加结算
-    if (baseDmg > 0 && caster.effects.boostNextDealt > 0) {
-        baseDmg += caster.effects.boostNextDealt;
-        caster.effects.boostNextDealt = 0;
+    if (base > 0 && caster.effects.boostNextDealt > 0) { base += caster.effects.boostNextDealt; caster.effects.boostNextDealt = 0; }
+    if (base > 0) {
+        let combo = caster.effects.educateNext; caster.effects.educateNext = false;
+        let d = executeDamage(base, target);
+        if (combo && d > 0) { log(`【教育】连击追加 ${d.toFixed(1)}！`); executeDamage(d, target); }
     }
-
-    // 3. 造成伤害与教育连击
-    if (baseDmg > 0) {
-        let isEducated = caster.effects.educateNext;
-        caster.effects.educateNext = false; // 消耗连击状态
-
-        let dealt = executeDamage(baseDmg, target);
-        
-        if (isEducated && dealt > 0) {
-            log(`> 【教育】连击触发！追加 ${dealt.toFixed(1)} 伤害！`, "#ff8c00");
-            executeDamage(dealt, target);
-        }
-    }
-
-    // 4. 治疗结算
-    if (heal > 0) {
-        caster.hp = Math.min(caster.maxHp, caster.hp + heal);
-        log(`> 恢复了 ${heal.toFixed(1)} 点生命！`, "#00ff88");
-    }
-
-    // 5. 挂载 Buff / Debuff (需在此处挂载，以免影响当前回合的计算)
+    if (card.heal) { caster.hp = Math.min(caster.maxHp, caster.hp + card.heal); log(`恢复了 ${card.heal} 生命`); }
     if (card.id === 'education') caster.effects.educateNext = true;
-    if (card.id === 'creation') target.effects.reduceNextTaken += 1.0;
-    if (card.id === 'crime') caster.effects.vulnNextTaken += 1.0;
-    if (card.id === 'study') { caster.effects.immuneNext = true; caster.effects.boostNextDealt += 1.0; }
-    if (card.id === 'service') { caster.effects.serviceTurns = 4; log(`> 服务协议启动，持续 4 回合！`, "#a6e3e9"); }
+    if (card.id === 'creation') target.effects.reduceNextTaken = 1.0;
+    if (card.id === 'crime') caster.effects.vulnNextTaken = 1.0;
+    if (card.id === 'study') { caster.effects.immuneNext = true; caster.effects.boostNextDealt = 1.0; }
+    if (card.id === 'service') caster.effects.serviceTurns = 4;
 }
 
-function playCard(card, index) {
-    if (!isMyTurn || me.hp <= 0 || opp.hp <= 0) return;
-    isMyTurn = false; clearInterval(turnTimer);
-    
-    // 一次性卡牌记录
-    if (card.once) me.usedCards.push(index);
-    conn.send({ type: 'PLAY_CARD', cardId: card.id, cardIndex: index });
-    
-    // UI 动画
-    const el = document.getElementById(`player-card-${index}`);
-    if(el) { el.style.transform = "translateY(-15px)"; setTimeout(() => { el.style.transform = ""; }, 400); }
-    
+function playCard(card, i) {
+    if(!isMyTurn) return; isMyTurn = false; clearInterval(turnTimer);
+    if(card.once) me.usedCards.push(i);
+    conn.send({ type: 'PLAY_CARD', cardId: card.id, cardIndex: i });
     log(`你 打出了 【${card.name}】`, "#00ff88");
     applyEffect(card, me, opp);
-    
-    if (!card.skip) isMyTurn = false; else { log(`> 【统治】生效，对方回合被抹除！你继续行动！`, "#a6e3e9"); isMyTurn = true; }
-    
+    if(card.skip) { log("【统治】生效，你继续行动！"); isMyTurn = true; }
     checkTurnEnd(me, opp);
 }
 
-function processOpponentPlay(cardId, index) {
-    const card = cardDB.find(c => c.id === cardId);
-    if (card.once) opp.usedCards.push(index);
-    
-    const el = document.getElementById(`enemy-card-${index}`);
-    if(el) { el.style.transform = "translateY(15px)"; setTimeout(() => { el.style.transform = ""; }, 400); }
-
+function processOpponentPlay(id, i) {
+    const card = cardDB.find(c => c.id === id);
+    if(card.once) opp.usedCards.push(i);
     log(`对手 打出了 【${card.name}】`, "#ff4757");
     applyEffect(card, opp, me);
-    
-    if (!card.skip) isMyTurn = true;
-    checkTurnEnd(opp, me); // 对手出牌结束，服务结算基于对手
-}
-
-function processOpponentSkip() {
-    log(`对手无牌可出，跳过了回合！`, "#888");
-    isMyTurn = true;
+    if(!card.skip) isMyTurn = true;
     checkTurnEnd(opp, me);
 }
 
-// 行动结束结算
-function checkTurnEnd(activePlayer, targetPlayer) {
-    // 结算主动方的【服务】光环
-    if (activePlayer.effects.serviceTurns > 0) {
-        log(`> 【服务】光环启动，对 ${targetPlayer.name} 造成 1.0 伤害！(剩余 ${activePlayer.effects.serviceTurns-1} 回合)`, "#ff8c00");
-        executeDamage(1.0, targetPlayer);
-        activePlayer.effects.serviceTurns--;
-    }
+function processOpponentSkip() { log("对手跳过回合"); isMyTurn = true; checkTurnEnd(opp, me); }
 
+function checkTurnEnd(active, target) {
+    if (active.effects.serviceTurns > 0) { executeDamage(1.0, target); active.effects.serviceTurns--; log("【服务】造成1.0额外伤害"); }
     updateHPUI(); renderHands();
-    
-    // 死亡判定
     if (me.hp <= 0 || opp.hp <= 0) {
-        clearInterval(turnTimer); const win = me.hp > 0;
+        clearInterval(turnTimer);
         document.getElementById('rematch-modal').style.display = 'flex';
-        document.getElementById('result-title').innerText = win ? "胜利" : "败北";
-        document.getElementById('result-title').style.color = win ? "#00ff88" : "#ff4757";
-        document.getElementById('btn-rematch').innerText = "再来一把"; document.getElementById('btn-rematch').disabled = false;
+        document.getElementById('result-title').innerText = me.hp > 0 ? "胜利" : "败北";
         return;
     }
-
     playCount++;
-    // 每 6 次行动（双方各3回合）重洗
     if (playCount >= 6 && isHost) {
-        let pHand = getRandomHand(), eHand = getRandomHand();
-        isMyTurn = true; 
+        let pHand = getRandomHand(false), eHand = getRandomHand(false);
         conn.send({ type: 'REDEAL', yourHand: eHand, oppHand: pHand, isYourTurn: false });
-        
-        me.hand = pHand; opp.hand = eHand;
-        me.usedCards = []; opp.usedCards = []; playCount = 0;
-        log("========= 三回合结束，系统重组了手牌 =========", "#a6e3e9");
-        applyFaithLogic(); updateHPUI(); renderHands();
-    }
-
-    startTimer();
+        me.hand = pHand; opp.hand = eHand; me.usedCards = []; opp.usedCards = []; playCount = 0;
+        isMyTurn = true; renderHands(); startTimer();
+    } else { startTimer(); }
 }
 
-// =============================
-// 5. 再来一把
-// =============================
-function requestRematch() {
-    rematchState.me = true;
-    document.getElementById('btn-rematch').innerText = "已发送请求..."; document.getElementById('btn-rematch').disabled = true;
-    conn.send({ type: 'REMATCH_REQ' }); checkRematch();
-}
-function checkRematch() { if (rematchState.me && rematchState.opp && isHost) initGameData(); }
+function requestRematch() { rematchState.me = true; conn.send({ type: 'REMATCH_REQ' }); checkRematch(); }
+function checkRematch() { if (rematchState.me && rematchState.opp && isHost) initGameData(true); }
 </script>
 </body>
 </html>
