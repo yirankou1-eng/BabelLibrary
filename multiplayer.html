@@ -15,7 +15,7 @@
         /* 战场专有 UI */
         #battlefield, #rematch-modal { display: none; }
         .hand { display: flex; justify-content: center; gap: 10px; margin: 15px 0; min-height: 130px; }
-        .card { width: 90px; height: 130px; background: #2c3e50; border: 2px solid #a6e3e9; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 13px; display: flex; flex-direction: column; justify-content: space-between; transition: 0.2s; box-sizing: border-box; }
+        .card { width: 90px; height: 130px; background: #2c3e50; border: 2px solid #a6e3e9; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 13px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s ease; box-sizing: border-box; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(166,227,233,0.3); }
         .enemy-card { border-color: #ff4757; cursor: default; background: #3a1c1e; }
         .enemy-card:hover { transform: none; box-shadow: none; }
@@ -99,21 +99,18 @@ let isHost = false;
 let isMyTurn = false;
 let turnTimer = null;
 let timeLeft = 30;
-let playCount = 0; // 记录总出牌数，满 6 次（3回合）洗牌
+let playCount = 0; // 记录总出牌数，满 6 次（每人3回合）洗牌
 
 let me = { hp: 30, hand: [], name: "探求者" };
 let opp = { hp: 30, hand: [], name: "对手" };
 let rematchState = { me: false, opp: false };
 
 // =============================
-// 2. 网络层 (已修复死锁与时序问题)
+// 2. 网络层
 // =============================
 function showStatus(msg, color="#ffd700") {
     const el = document.getElementById('status-msg');
-    if(el) {
-        el.innerText = msg;
-        el.style.color = color;
-    }
+    if(el) { el.innerText = msg; el.style.color = color; }
 }
 
 function log(msg, color="#fff") {
@@ -128,9 +125,7 @@ function initHost() {
     document.getElementById('btn-host').disabled = true;
     showStatus("正在连接中继服务器...");
     
-    if (!peer) {
-        peer = new Peer({ config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] } });
-    }
+    if (!peer) peer = new Peer({ config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] } });
     
     peer.on('open', id => {
         document.getElementById('my-id').innerText = id;
@@ -138,10 +133,7 @@ function initHost() {
         showStatus("ID 已生成，等待对手连接...", "#00ff88");
     });
     
-    peer.on('connection', c => {
-        isHost = true;
-        setupConn(c);
-    });
+    peer.on('connection', c => { isHost = true; setupConn(c); });
     
     peer.on('error', err => {
         showStatus("网络错误: " + err.type, "#ff4757");
@@ -156,7 +148,6 @@ function connectToHost() {
     document.getElementById('btn-join').disabled = true;
     showStatus("正在初始化网络库...");
     
-    // 如果还没生成过 peer，先生成再连接
     if (!peer) {
         peer = new Peer({ config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] } });
         peer.on('open', () => doConnect(id));
@@ -165,7 +156,7 @@ function connectToHost() {
             document.getElementById('btn-join').disabled = false;
         });
     } else if (peer.open) {
-        doConnect(id); // 如果已经连接到服务器，直接呼叫
+        doConnect(id);
     } else {
         peer.on('open', () => doConnect(id));
     }
@@ -175,8 +166,6 @@ function doConnect(id) {
     showStatus("正在呼叫对手: " + id, "#ffd700");
     const c = peer.connect(id, { reliable: true });
     isHost = false;
-    
-    // 【核心修复】：不要等待 c.on('open')，直接传给 setupConn 进行绑定！
     setupConn(c); 
 }
 
@@ -185,7 +174,6 @@ function setupConn(c) {
     me.name = document.getElementById('my-name').value.trim() || "探求者";
     showStatus("通道建立！正在同步握手...", "#ffd700");
     
-    // 此时绑定 open，绝对不会错过触发时机
     conn.on('open', () => {
         showStatus("连接成功！正在进入对局...", "#00ff88");
         conn.send({ type: 'HANDSHAKE', name: me.name });
@@ -215,8 +203,9 @@ function handleData(data) {
         opp.hand = data.oppHand;
         isMyTurn = data.isYourTurn;
         playCount = 0;
-        log("========= 每三回合重新发牌 =========", "#a6e3e9");
-        updateUI();
+        log("========= 三回合结束，系统重组了手牌 =========", "#a6e3e9");
+        renderHands(); // 重新渲染新牌
+        updateHPUI();
         startTimer();
     }
     else if (data.type === 'REMATCH_REQ') {
@@ -229,8 +218,9 @@ function handleData(data) {
 // =============================
 // 3. 游戏核心逻辑
 // =============================
+// 修改为每次发 3 张牌
 function getRandomHand() {
-    return Array.from({length: 4}, () => cardDB[Math.floor(Math.random() * cardDB.length)]);
+    return Array.from({length: 3}, () => cardDB[Math.floor(Math.random() * cardDB.length)]);
 }
 
 function initGameData() {
@@ -258,12 +248,15 @@ function enterBattlefield() {
     rematchState = { me: false, opp: false };
     
     log(`对局开始！${isMyTurn ? '你' : opp.name} 获得了先手。`, "#a6e3e9");
-    updateUI();
+    
+    // 初始化时分开渲染牌和血量
+    renderHands();
+    updateHPUI();
     startTimer();
 }
 
-// 刷新画面与公开手牌
-function updateUI() {
+// 单独刷新血量 (不重绘 DOM 保证动画连贯)
+function updateHPUI() {
     document.getElementById('my-display-name').innerText = me.name;
     document.getElementById('enemy-name').innerText = opp.name;
     
@@ -272,24 +265,26 @@ function updateUI() {
     
     document.getElementById('enemy-hp-text').innerText = opp.hp.toFixed(1);
     document.getElementById('enemy-hp-fill').style.width = Math.max(0, (opp.hp / 30 * 100)) + '%';
-    
-    // 渲染对手明牌
+}
+
+// 仅在发牌时渲染牌组，战斗中不再擦除
+function renderHands() {
     const eHandDiv = document.getElementById('enemy-hand');
     eHandDiv.innerHTML = '';
-    opp.hand.forEach(c => {
+    opp.hand.forEach((c, index) => {
         eHandDiv.innerHTML += `
-            <div class="card enemy-card">
+            <div class="card enemy-card" id="enemy-card-${index}">
                 <div class="card-title">${c.name}</div>
                 <div>${c.desc}</div>
             </div>`;
     });
 
-    // 渲染我方手牌
     const pHandDiv = document.getElementById('player-hand');
     pHandDiv.innerHTML = '';
     me.hand.forEach((c, index) => {
         const div = document.createElement('div');
         div.className = 'card';
+        div.id = `player-card-${index}`;
         div.innerHTML = `
             <div class="card-title">${c.name}</div>
             <div>${c.desc}</div>`;
@@ -330,7 +325,15 @@ function playCard(card, index) {
     isMyTurn = false;
     clearInterval(turnTimer);
     
-    me.hand.splice(index, 1);
+    // 视觉特效：卡牌上浮发光
+    const el = document.getElementById(`player-card-${index}`);
+    if(el) {
+        el.style.transform = "translateY(-15px)";
+        el.style.boxShadow = "0 0 15px #00ff88";
+        setTimeout(() => { el.style.transform = ""; el.style.boxShadow = ""; }, 400);
+    }
+    
+    // 【修改点】：去除了 splice，卡牌不再被销毁，可以重复使用
     conn.send({ type: 'PLAY_CARD', cardId: card.id, cardIndex: index });
     
     log(`你 打出了 【${card.name}】`, "#00ff88");
@@ -346,8 +349,16 @@ function playCard(card, index) {
 // 被动接受对方出牌
 function processOpponentPlay(cardId, index) {
     const card = cardDB.find(c => c.id === cardId);
-    opp.hand.splice(index, 1);
     
+    // 视觉特效：敌方卡牌下沉发红光
+    const el = document.getElementById(`enemy-card-${index}`);
+    if(el) {
+        el.style.transform = "translateY(15px)";
+        el.style.boxShadow = "0 0 15px #ff4757";
+        setTimeout(() => { el.style.transform = ""; el.style.boxShadow = ""; }, 400);
+    }
+
+    // 【修改点】：同样去除了 splice
     log(`对手 打出了 【${card.name}】`, "#ff4757");
     applyEffect(card, opp, me);
     
@@ -360,7 +371,9 @@ function applyEffect(card, caster, target) {
     if (card.heal) caster.hp = Math.min(30, caster.hp + card.heal);
     caster.hp = Math.max(0, caster.hp);
     target.hp = Math.max(0, target.hp);
-    updateUI();
+    
+    // 仅刷新血量，不再重绘卡牌 DOM
+    updateHPUI();
 }
 
 function checkTurnEnd() {
@@ -381,22 +394,23 @@ function checkTurnEnd() {
         return;
     }
 
-    // 每 3 个回合（共计 6 次出牌）由房主重洗
+    // 每 3 个回合（共计 6 次出牌，包含对方的）由房主重洗
     if (playCount >= 6 && isHost) {
         me.hand = getRandomHand();
         opp.hand = getRandomHand();
         isMyTurn = true; // 洗牌后房主先手
         conn.send({ type: 'REDEAL', yourHand: opp.hand, oppHand: me.hand, isYourTurn: false });
         playCount = 0;
-        log("========= 每三回合重新发牌 =========", "#a6e3e9");
+        log("========= 三回合结束，系统重组了手牌 =========", "#a6e3e9");
+        renderHands(); // 三回合满了才刷新一遍牌
+        updateHPUI();
     }
 
-    updateUI();
     startTimer();
 }
 
 // =============================
-// 4. 再来一把 (无需重连)
+// 4. 再来一把
 // =============================
 function requestRematch() {
     rematchState.me = true;
