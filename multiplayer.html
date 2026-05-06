@@ -9,7 +9,6 @@
         body { background: #0a0a0a; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 10px; user-select: none; }
         .panel { background: #1a1a1a; border: 2px solid #a6e3e9; border-radius: 10px; padding: 15px; max-width: 600px; margin: 10px auto; position: relative; box-sizing: border-box; }
         
-        /* 移动端 ID 点击反馈 */
         #my-id { color:#00ff88; cursor:pointer; text-decoration: underline; word-break: break-all; display: block; margin: 10px 0; }
         
         button { background: #a6e3e9; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 5px; margin: 5px; transition: 0.2s; }
@@ -20,17 +19,14 @@
         #battlefield, #rematch-modal { display: none; }
         .hand { display: flex; justify-content: center; gap: 8px; margin: 10px 0; min-height: 120px; flex-wrap: nowrap; }
         
-        /* 卡牌基础样式 */
         .card { width: 30%; max-width: 100px; height: 140px; background: #2c3e50; border: 2px solid #a6e3e9; border-radius: 8px; padding: 8px; cursor: pointer; font-size: 11px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s ease; box-sizing: border-box; overflow: hidden; }
         .card:hover { transform: translateY(-5px); }
         .enemy-card { border-color: #ff4757; cursor: default; background: #3a1c1e; }
         
-        /* 状态卡牌 */
         .card.disabled { opacity: 0.3; cursor: not-allowed; border-color: #888 !important; pointer-events: none; }
         .card.passive { border-color: #ffd700; background: #4a3b00; cursor: not-allowed; }
         .card-title { font-weight: bold; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 3px; }
         
-        /* 响应式调整：针对手机屏幕 */
         @media screen and (max-width: 480px) {
             .card { height: 120px; padding: 5px; font-size: 10px; }
             .card-title { font-size: 11px; }
@@ -94,7 +90,7 @@
 
 <script>
 // =============================
-// 1. 卡牌数据库 (更新规则)
+// 1. 卡牌数据库
 // =============================
 const cardDB = [
     { id: 'education', name: '教育', desc: '1.0伤害。下次伤害触发连击。', dmg: 1 },
@@ -128,7 +124,7 @@ let opp = createPlayer("对手");
 let rematchState = { me: false, opp: false };
 
 // =============================
-// 2. 网络层 (修复ID复制)
+// 2. 网络层
 // =============================
 function showStatus(msg, color="#ffd700") { const el = document.getElementById('status-msg'); if(el) { el.innerText = msg; el.style.color = color; } }
 function log(msg, color="#fff") { const box = document.getElementById('logs'); if(box) { box.innerHTML += `<div style="color:${color}; margin-bottom:4px;">${msg}</div>`; box.scrollTop = box.scrollHeight; } }
@@ -139,9 +135,7 @@ function initHost() {
     peer.on('open', id => { 
         const idSpan = document.getElementById('my-id');
         idSpan.innerText = id;
-        idSpan.onclick = () => {
-            navigator.clipboard.writeText(id).then(() => alert("ID已复制"));
-        };
+        idSpan.onclick = () => { navigator.clipboard.writeText(id).then(() => alert("ID已复制")); };
         showStatus("等待连接...", "#00ff88"); 
     });
     peer.on('connection', c => { isHost = true; setupConn(c); });
@@ -166,14 +160,14 @@ function handleData(data) {
     else if (data.type === 'START_GAME') {
         me = createPlayer(me.name); opp = createPlayer(data.oppName);
         me.hand = data.yourHand; opp.hand = data.oppHand; isMyTurn = data.isYourTurn;
-        enterBattlefield(true); // 只有首局触发信仰
+        enterBattlefield(true); 
     }
     else if (data.type === 'PLAY_CARD') { processOpponentPlay(data.cardId, data.cardIndex); }
     else if (data.type === 'SKIP_TURN') { processOpponentSkip(); }
     else if (data.type === 'REDEAL') {
         me.hand = data.yourHand; opp.hand = data.oppHand; isMyTurn = data.isYourTurn;
         me.usedCards = []; opp.usedCards = []; playCount = 0;
-        log("========= 三回合结束，手牌已重组 =========", "#a6e3e9");
+        log("========= 三回合结束，系统重组了手牌 =========", "#a6e3e9");
         renderHands(); updateHPUI(); startTimer();
     }
     else if (data.type === 'REMATCH_REQ') { rematchState.opp = true; checkRematch(); }
@@ -182,8 +176,6 @@ function handleData(data) {
 // =============================
 // 3. 核心机制
 // =============================
-
-// 抽牌算法：去重，且根据是否首轮决定是否有“信仰”
 function getRandomHand(isFirstRound) {
     let deck = isFirstRound ? [...cardDB] : cardDB.filter(c => c.id !== 'faith');
     let hand = [];
@@ -269,7 +261,6 @@ function executeDamage(amt, target) {
 
 function applyEffect(card, caster, target) {
     let base = card.dmg || 0;
-    // 研究：2次爆发8.0
     if (card.id === 'research' && !caster.effects.researchDone) {
         caster.effects.researchCount++;
         if (caster.effects.researchCount >= 2) { base = 8.0; caster.effects.researchDone = true; log("【研究】爆发！造成8.0伤害！", "#ff8c00"); }
@@ -311,7 +302,7 @@ function processOpponentPlay(id, i) {
 function processOpponentSkip() { log("对手跳过回合"); isMyTurn = true; checkTurnEnd(opp, me); }
 
 function checkTurnEnd(active, target) {
-    if (active.effects.serviceTurns > 0) { executeDamage(1.0, target); active.effects.serviceTurns--; log("【服务】造成1.0额外伤害"); }
+    if (active.effects.serviceTurns > 0) { executeDamage(1.0, target); active.effects.serviceTurns--; log("【服务】造成1.0额外伤害", "#ff8c00"); }
     updateHPUI(); renderHands();
     if (me.hp <= 0 || opp.hp <= 0) {
         clearInterval(turnTimer);
@@ -320,11 +311,17 @@ function checkTurnEnd(active, target) {
         return;
     }
     playCount++;
+    
+    // 【修复点】：不篡改既定回合逻辑，只同步发送对立的回合指令
     if (playCount >= 6 && isHost) {
         let pHand = getRandomHand(false), eHand = getRandomHand(false);
-        conn.send({ type: 'REDEAL', yourHand: eHand, oppHand: pHand, isYourTurn: false });
+        // 发送 !isMyTurn，顺延原本正确的回合所属权，不再无脑置为 false
+        conn.send({ type: 'REDEAL', yourHand: eHand, oppHand: pHand, isYourTurn: !isMyTurn });
         me.hand = pHand; opp.hand = eHand; me.usedCards = []; opp.usedCards = []; playCount = 0;
-        isMyTurn = true; renderHands(); startTimer();
+        
+        // 【修复点】：给房主也补上重组提示
+        log("========= 三回合结束，系统重组了手牌 =========", "#a6e3e9");
+        renderHands(); startTimer();
     } else { startTimer(); }
 }
 
