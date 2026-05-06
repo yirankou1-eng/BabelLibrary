@@ -1,0 +1,503 @@
+/* 基础重置，确保没有默认的边距干扰布局 */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* 屏幕自适应与暗色调背景设定 */
+body {
+    background-color: #0a0a0a;
+    color: #e0e0e0;
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+/* 游戏主显示区域：采用三次函数向量场，实现两侧疏、中间密的流体视觉 */
+#main-content {
+    flex: 1;
+    position: relative;
+    background-color: #0d0d0d;
+    /* 18条曲线：斜率变动大，中心区域间距压缩，两侧区域间距扩张 */
+    /* 核心算法：y_start/end 步进为 75px，y_control 步进为 25px，从而在屏幕中心形成高密度汇聚点 */
+    background-image: 
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2000 1000' preserveAspectRatio='xMidYMid slice' fill='none'%3E%3Cpath d='M-100 -200 C 700 300, 1300 300, 2100 -200' stroke='%231a1a1a' stroke-width='14' opacity='0.5'/%3E%3Cpath d='M-100 -125 C 700 325, 1300 325, 2100 -125' stroke='%23222' stroke-width='8' opacity='0.6'/%3E%3Cpath d='M-100 -50 C 700 350, 1300 350, 2100 -50' stroke='%232a2a2a' stroke-width='10' opacity='0.4'/%3E%3Cpath d='M-100 25 C 700 375, 1300 375, 2100 25' stroke='%23333' stroke-width='6' opacity='0.7'/%3E%3Cpath d='M-100 100 C 700 400, 1300 400, 2100 100' stroke='%23a6e3e9' stroke-width='4' opacity='0.12'/%3E%3Cpath d='M-100 175 C 700 425, 1300 425, 2100 175' stroke='%233a3a3a' stroke-width='12' opacity='0.5'/%3E%3Cpath d='M-100 250 C 700 450, 1300 450, 2100 250' stroke='%231f1f1f' stroke-width='15' opacity='0.6'/%3E%3Cpath d='M-100 325 C 700 475, 1300 475, 2100 325' stroke='%23262626' stroke-width='9' opacity='0.4'/%3E%3Cpath d='M-100 400 C 700 500, 1300 500, 2100 400' stroke='%23444' stroke-width='7' opacity='0.5'/%3E%3Cpath d='M-100 475 C 700 525, 1300 525, 2100 475' stroke='%23a6e3e9' stroke-width='5' opacity='0.15'/%3E%3Cpath d='M-100 550 C 700 550, 1300 550, 2100 550' stroke='%232a2a2a' stroke-width='11' opacity='0.4'/%3E%3Cpath d='M-100 625 C 700 575, 1300 575, 2100 625' stroke='%23333' stroke-width='13' opacity='0.5'/%3E%3Cpath d='M-100 700 C 700 600, 1300 600, 2100 700' stroke='%231a1a1a' stroke-width='8' opacity='0.7'/%3E%3Cpath d='M-100 775 C 700 625, 1300 625, 2100 775' stroke='%233a3a3a' stroke-width='14' opacity='0.4'/%3E%3Cpath d='M-100 850 C 700 650, 1300 650, 2100 850' stroke='%23a6e3e9' stroke-width='3' opacity='0.1'/%3E%3Cpath d='M-100 925 C 700 675, 1300 675, 2100 925' stroke='%23222' stroke-width='10' opacity='0.6'/%3E%3Cpath d='M-100 1000 C 700 700, 1300 700, 2100 1000' stroke='%232e2e2e' stroke-width='6' opacity='0.5'/%3E%3Cpath d='M-100 1075 C 700 725, 1300 725, 2100 1075' stroke='%23333' stroke-width='12' opacity='0.4'/%3E%3C/svg%3E");
+    background-size: cover;
+    background-attachment: local;
+}
+
+/* 为背景添加一个微弱的呼吸浮动效果 */
+body::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at 50% 50%, rgba(166, 227, 233, 0.03) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* 上下边栏的通用布局 */
+.top-bar, .bottom-bar {
+    background-color: #1e1e1e;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    height: 60px;
+    border-bottom: 1px solid #333;
+}
+
+.bottom-bar {
+    border-bottom: none;
+    border-top: 1px solid #333;
+}
+
+/* 按钮的基础样式 */
+button {
+    background-color: #333;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+button:hover {
+    background-color: #444;
+}
+
+button.active {
+    background-color: #555;
+    border-color: #888;
+}
+
+/* 居中显示的方向感 */
+.direction-sense {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+/* 主内容区域，占据上下边栏之外的所有剩余空间 */
+main {
+    flex-grow: 1;
+    position: relative;
+    background-color: #181818;
+}
+
+/* 页面视图切换逻辑，默认隐藏，带有 active 类的显示 */
+.page {
+    display: none;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.page.active {
+    display: block;
+}
+
+/* 首页独有元素 */
+.frog {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    font-size: 48px; /* 青白简约风青蛙的占位符 */
+    cursor: pointer;
+    user-select: none; /* 防止双击选中文本 */
+}
+/* ================== */
+/* 光团与动画样式     */
+/* ================== */
+/* ================== */
+/* 光团与动画样式     */
+/* ================== */
+.orb {
+    position: absolute;
+    width: 48px; /* 修改：光团宽度放大三倍 (原为 16px) */
+    height: 48px; /* 修改：光团高度放大三倍 (原为 16px) */
+    background-color: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #ffffff, 0 0 20px #a6e3e9; /* 发光效果 */
+    cursor: pointer;
+    opacity: 0; /* 初始透明 */
+    transition: opacity 1s ease-in-out; /* 渐渐出现/消失的动画 */
+    z-index: 10;
+}
+
+/* 新增：青蛙收集光团时的弹跳动画 */
+@keyframes frogBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-30px); }
+}
+
+.frog-bounce {
+    animation: frogBounce 0.3s ease-out;
+}
+
+/* ================== */
+/* 弹窗系统样式       */
+/* ================== */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 999;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1e1e1e;
+    padding: 24px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    z-index: 1000;
+    width: 85%;
+    max-width: 350px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.modal.active, .modal-overlay.active {
+    display: block; /* 激活时显示 */
+}
+
+.upgrade-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #333;
+}
+
+.sub-text {
+    font-size: 12px;
+    color: #888;
+}
+
+.close-btn {
+    width: 100%;
+    margin-top: 10px;
+    background-color: #444;
+}
+/* ================== */
+/* 美化后的书架系统    */
+/* ================== */
+.explore-header {
+    padding: 30px 20px;
+    text-align: center;
+    background: linear-gradient(to bottom, #1a1a1a, #121212);
+}
+
+#bookshelf-container {
+    display: flex;
+    overflow-x: auto;
+    padding: 40px 20px;
+    gap: 4px; /* 书与书之间的细缝 */
+    height: 300px;
+    align-items: flex-end; /* 让书整齐地站在隔板上 */
+    background: #121212;
+    /* 书架隔板：用线性渐变模拟木质或石质平台 */
+    border-bottom: 12px solid #2c2c2c;
+    box-shadow: inset 0 -5px 10px rgba(0,0,0,0.8);
+}
+
+/* 滚动条美化 */
+#bookshelf-container::-webkit-scrollbar { height: 6px; }
+#bookshelf-container::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+/* 每一本书的脊背设计 */
+.book {
+    position: relative;
+    width: 35px; /* 较窄的书脊 */
+    min-width: 35px;
+    height: var(--book-height, 180px); /* 由 JS 随机生成高度 */
+    background-color: var(--book-color, #3a4a5a); /* 由 JS 随机生成颜色 */
+    border-left: 2px solid rgba(255,255,255,0.1);
+    border-right: 2px solid rgba(0,0,0,0.3);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+}
+
+/* 书脊上的文字（竖排） */
+.book-title {
+    writing-mode: vertical-rl;
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 1px;
+    pointer-events: none;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+}
+
+/* 悬浮时的“抽书”效果 */
+.book:hover {
+    transform: translateY(-20px);
+    filter: brightness(1.2);
+    z-index: 10;
+}
+
+/* 已解锁书籍的标识：在顶部加一个淡淡的小光点 */
+.book.unlocked::after {
+    content: '';
+    position: absolute;
+    top: 5px;
+    width: 4px;
+    height: 4px;
+    background: #a6e3e9;
+    border-radius: 50%;
+    box-shadow: 0 0 5px #a6e3e9;
+}
+
+/* 锁定书籍的视觉反馈（变暗） */
+.book.locked {
+    filter: grayscale(0.5) brightness(0.6);
+}
+
+/* ================== */
+/* 沉浸式阅读打光系统 */
+/* ================== */
+#reading-overlay {
+    display: none; /* 默认隐藏 */
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: #000; /* 绝对纯黑背景 */
+    z-index: 200;
+    overflow: hidden;
+}
+
+#reading-overlay.active {
+    display: block;
+}
+
+#reading-content {
+    width: 100%;
+    height: 100%;
+    padding: 40px;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 18px;
+    line-height: 1.6;
+    color: #e0e0e0;
+    word-break: break-all;
+    /* 核心打光逻辑：创建一个从鼠标坐标向外发散的渐变透明圆，以此作为遮罩 */
+    mask-image: radial-gradient(circle 120px at var(--mouse-x, 50%) var(--mouse-y, 50%), black 0%, transparent 100%);
+    -webkit-mask-image: radial-gradient(circle 120px at var(--mouse-x, 50%) var(--mouse-y, 50%), black 0%, transparent 100%);
+}
+
+#btn-close-reading {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 201;
+    background-color: rgba(50, 50, 50, 0.8);
+}
+
+/* 有意义句子的交互提示 */
+.meaningful-sentence {
+    cursor: pointer;
+    /* 默认颜色与周围随机字相同，防止被一眼看穿，只有光照上去且鼠标悬浮时才微微发亮 */
+}
+
+.meaningful-sentence:hover {
+    color: #a6e3e9;
+    text-shadow: 0 0 5px #a6e3e9;
+}
+/* ================== */
+/* 巴别塔战斗系统样式 */
+/* ================== */
+.battle-arena {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 20px;
+    background: radial-gradient(circle at top, #2a2a2a, #121212);
+}
+
+.entity {
+    background: rgba(0,0,0,0.4);
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid #444;
+}
+
+.hp-bar {
+    width: 100%;
+    height: 12px;
+    background: #222;
+    border-radius: 6px;
+    margin: 8px 0;
+    overflow: hidden;
+}
+
+.hp-fill {
+    height: 100%;
+    background: #a6e3e9;
+    width: 100%;
+    transition: width 0.3s ease-out;
+}
+
+.enemy .hp-fill { background: #ff6b6b; } /* 敌方血条为红色 */
+
+.hp-text { font-size: 12px; color: #ccc; text-align: right; }
+
+.battle-log {
+    flex-grow: 1;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+    overflow-y: auto;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #aaa;
+}
+
+.hand-cards {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    height: 110px;
+}
+
+.card {
+    background: #2c3e50;
+    border: 2px solid #5d6d7e;
+    border-radius: 6px;
+    width: 30%;
+    max-width: 90px;
+    padding: 5px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.2s, filter 0.2s;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+}
+
+.card:hover { transform: translateY(-10px); filter: brightness(1.2); }
+.card.disabled { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
+
+.card-name { font-weight: bold; font-size: 14px; margin-bottom: 5px; color: #fff; }
+.card-desc { font-size: 10px; color: #ccc; }
+
+.battle-btn {
+    margin-top: 10px;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    background: #a6e3e9;
+    color: #121212;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.battle-btn:hover { background: #82c8cf; }
+/* 卡牌强化按钮样式 */
+.card {
+    position: relative; /* 确保加号按钮能绝对定位在卡牌上 */
+}
+
+.card-btn-plus {
+    position: absolute;
+    top: -10px; 
+    right: -10px;
+    width: 24px; 
+    height: 24px;
+    background: #ff6b6b; 
+    color: white;
+    border-radius: 50%; 
+    font-weight: bold;
+    font-size: 16px;
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    cursor: pointer; 
+    z-index: 10;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.8);
+    transition: transform 0.2s;
+}
+
+.card-btn-plus:hover {
+    transform: scale(1.2);
+    background: #ff4757;
+}
+/* 上下楼层箭头样式 */
+.nav-arrow {
+    cursor: pointer;
+    padding: 10px;
+    transition: transform 0.2s, filter 0.2s;
+}
+.nav-arrow:hover {
+    transform: scale(1.3);
+    filter: brightness(1.5) drop-shadow(0 0 5px #a6e3e9);
+}
+.nav-arrow.disabled {
+    opacity: 0.1;
+    pointer-events: none;
+}
+/* 进入界面按钮特化效果 */
+#btn-enter-game:hover {
+    background: rgba(166, 227, 233, 0.1) !important;
+    box-shadow: 0 0 20px rgba(166, 227, 233, 0.3);
+    transform: translateY(-2px);
+}
+
+/* 简单的呼吸动画让塔尖亮起 */
+@keyframes tower-glow {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+}
+#entry-screen svg circle {
+    animation: tower-glow 2s infinite ease-in-out;
+}
+/* ================== */
+/* 升级按钮统一样式与状态 */
+/* ================== */
+.upg-btn {
+    width: 100px; /* 固定按钮宽度，使其保持一致 */
+    height: 38px; /* 固定按钮高度 */
+    font-weight: bold;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 资源充足且条件满足时的状态 (青蓝色) */
+.btn-affordable {
+    background-color: #a6e3e9;
+    color: #121212;
+    border: 1px solid #a6e3e9;
+    cursor: pointer;
+}
+.btn-affordable:hover {
+    background-color: #82c8cf;
+}
+
+/* 资源不足或前置条件未满足时的状态 (灰色) */
+.btn-unaffordable {
+    background-color: #333333;
+    color: #888888;
+    border: 1px solid #555555;
+    cursor: not-allowed;
+}
+.btn-unaffordable:hover {
+    background-color: #333333;
+}

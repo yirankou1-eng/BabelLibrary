@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>巴别塔 - 联机模式</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        body { background: #0a0a0a; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; user-select: none; }
+        .panel { background: #1a1a1a; border: 2px solid #a6e3e9; border-radius: 10px; padding: 20px; max-width: 600px; margin: 20px auto; position: relative; }
+        button { background: #a6e3e9; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 5px; margin: 5px; transition: 0.2s; }
+        button:hover { background: #85c1c7; }
+        button:disabled { background: #555; color: #888; cursor: not-allowed; }
+        input { padding: 10px; border: 1px solid #a6e3e9; border-radius: 5px; background: #000; color: #fff; text-align: center; margin: 5px 0; width: 80%; }
+        
+        /* 战场专有 UI */
+        #battlefield, #rematch-modal { display: none; }
+        .hand { display: flex; justify-content: center; gap: 10px; margin: 15px 0; min-height: 130px; }
+        .card { width: 90px; height: 130px; background: #2c3e50; border: 2px solid #a6e3e9; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 13px; display: flex; flex-direction: column; justify-content: space-between; transition: 0.2s; box-sizing: border-box; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(166,227,233,0.3); }
+        .enemy-card { border-color: #ff4757; cursor: default; background: #3a1c1e; }
+        .enemy-card:hover { transform: none; box-shadow: none; }
+        .card-title { font-weight: bold; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; }
+        
+        .hp-bar { width: 100%; background: #333; height: 15px; border-radius: 10px; overflow: hidden; margin: 5px 0; }
+        .hp-fill { height: 100%; width: 100%; transition: width 0.3s; }
+        .enemy-hp-fill { background: #ff4757; }
+        .player-hp-fill { background: #00ff88; }
+        
+        #timer { font-size: 28px; font-weight: bold; margin: 10px 0; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        #logs { height: 120px; overflow-y: auto; background: #000; border: 1px solid #444; padding: 10px; font-size: 13px; text-align: left; border-radius: 5px; }
+        
+        /* 结算弹窗 */
+        #rematch-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; flex-direction: column; justify-content: center; align-items: center; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <button onclick="window.location.href='index.html'" style="position:absolute; top:20px; left:20px; background:#444; color:#fff;">&lt; 离开联机</button>
+
+    <div id="lobby" class="panel">
+        <h2 style="color: #a6e3e9;">联机终端</h2>
+        <input type="text" id="my-name" placeholder="输入你的临时昵称..." value="探求者">
+        <br><br>
+        <button onclick="initHost()" id="btn-host">生成并作为房主</button>
+        <p>我的 ID: <span id="my-id" style="color:#00ff88; cursor:pointer;">等待生成...</span></p>
+        <hr style="border-color:#444; margin:20px 0;">
+        <input type="text" id="opp-id" placeholder="粘贴对方的 ID...">
+        <button onclick="connectToHost()" id="btn-join">连接对手</button>
+        <p id="status-msg" style="color:#ffd700; font-weight:bold;"></p>
+    </div>
+
+    <div id="battlefield" class="panel">
+        <div id="rematch-modal">
+            <h2 id="result-title">游戏结束</h2>
+            <p id="result-desc"></p>
+            <div>
+                <button id="btn-rematch" onclick="requestRematch()">再来一把</button>
+                <button onclick="window.location.href='index.html'" style="background:#444; color:#fff;">退出联机</button>
+            </div>
+            <p id="rematch-status" style="color:#a6e3e9; font-size:12px; margin-top:10px;"></p>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+            <h3 id="enemy-name" style="color:#ff4757; margin:0;">对手</h3>
+            <span style="font-size:14px;">HP: <span id="enemy-hp-text">30.0</span>/30</span>
+        </div>
+        <div class="hp-bar"><div id="enemy-hp-fill" class="hp-fill enemy-hp-fill"></div></div>
+        
+        <div id="enemy-hand" class="hand"></div> <div id="timer">--</div>
+        
+        <div id="logs"></div>
+        
+        <div id="player-hand" class="hand"></div> <div class="hp-bar"><div id="player-hp-fill" class="hp-fill player-hp-fill"></div></div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <h3 id="my-display-name" style="color:#00ff88; margin:0;">我</h3>
+            <span style="font-size:14px;">HP: <span id="player-hp-text">30.0</span>/30</span>
+        </div>
+    </div>
+
+<script>
+// =============================
+// 1. 核心数据与规则定义
+// =============================
+const cardDB = [
+    { id: 'education', name: '教育', desc: '造成 1.0 伤害，下次造成伤害额外连击。', dmg: 1 },
+    { id: 'creation', name: '创造', desc: '造成 2.0 伤害，减免下次受击 1.0 伤害。', dmg: 2 },
+    { id: 'research', name: '研究', desc: '无效果 (简化版)。', dmg: 0 },
+    { id: 'combat', name: '战斗', desc: '造成 3.0 伤害。', dmg: 3 },
+    { id: 'crime', name: '犯罪', desc: '造成 4.0 伤害，下次受击增加 1.0。', dmg: 4 },
+    { id: 'study', name: '学习', desc: '造成 1.0 伤害，免疫下次伤害。', dmg: 1 },
+    { id: 'pleasure', name: '享乐', desc: '恢复 4.0 生命。', heal: 4 }, 
+    { id: 'rule', name: '统治', desc: '造成 1.0 伤害，跳过对方下回合。', dmg: 1, skip: true },
+    { id: 'service', name: '服务', desc: '造成 2.0 持续伤害 (简化为即时2.0)。', dmg: 2 }
+];
+
+let peer = null;
+let conn = null;
+let isHost = false;
+let isMyTurn = false;
+let turnTimer = null;
+let timeLeft = 30;
+let playCount = 0; // 记录总出牌数，满 6 次（3回合）洗牌
+
+let me = { hp: 30, hand: [], name: "探求者" };
+let opp = { hp: 30, hand: [], name: "对手" };
+let rematchState = { me: false, opp: false };
+
+// =============================
+// 2. 网络层 (已修复死锁与时序问题)
+// =============================
+function showStatus(msg, color="#ffd700") {
+    const el = document.getElementById('status-msg');
+    if(el) {
+        el.innerText = msg;
+        el.style.color = color;
+    }
+}
+
+function log(msg, color="#fff") {
+    const box = document.getElementById('logs');
+    if(box) {
+        box.innerHTML += `<div style="color:${color}; margin-bottom:5px;">${msg}</div>`;
+        box.scrollTop = box.scrollHeight;
+    }
+}
+
+function initHost() {
+    document.getElementById('btn-host').disabled = true;
+    showStatus("正在连接中继服务器...");
+    
+    if (!peer) {
+        peer = new Peer({ config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] } });
+    }
+    
+    peer.on('open', id => {
+        document.getElementById('my-id').innerText = id;
+        document.getElementById('my-id').onclick = () => navigator.clipboard.writeText(id);
+        showStatus("ID 已生成，等待对手连接...", "#00ff88");
+    });
+    
+    peer.on('connection', c => {
+        isHost = true;
+        setupConn(c);
+    });
+    
+    peer.on('error', err => {
+        showStatus("网络错误: " + err.type, "#ff4757");
+        document.getElementById('btn-host').disabled = false;
+    });
+}
+
+function connectToHost() {
+    const id = document.getElementById('opp-id').value.trim();
+    if(!id) return alert("请输入对手 ID");
+    
+    document.getElementById('btn-join').disabled = true;
+    showStatus("正在初始化网络库...");
+    
+    // 如果还没生成过 peer，先生成再连接
+    if (!peer) {
+        peer = new Peer({ config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] } });
+        peer.on('open', () => doConnect(id));
+        peer.on('error', err => {
+            showStatus("网络错误: " + err.type, "#ff4757");
+            document.getElementById('btn-join').disabled = false;
+        });
+    } else if (peer.open) {
+        doConnect(id); // 如果已经连接到服务器，直接呼叫
+    } else {
+        peer.on('open', () => doConnect(id));
+    }
+}
+
+function doConnect(id) {
+    showStatus("正在呼叫对手: " + id, "#ffd700");
+    const c = peer.connect(id, { reliable: true });
+    isHost = false;
+    
+    // 【核心修复】：不要等待 c.on('open')，直接传给 setupConn 进行绑定！
+    setupConn(c); 
+}
+
+function setupConn(c) {
+    conn = c;
+    me.name = document.getElementById('my-name').value.trim() || "探求者";
+    showStatus("通道建立！正在同步握手...", "#ffd700");
+    
+    // 此时绑定 open，绝对不会错过触发时机
+    conn.on('open', () => {
+        showStatus("连接成功！正在进入对局...", "#00ff88");
+        conn.send({ type: 'HANDSHAKE', name: me.name });
+    });
+    
+    conn.on('data', data => handleData(data));
+    conn.on('close', () => { alert("对手已断开网络"); location.reload(); });
+}
+
+function handleData(data) {
+    if (data.type === 'HANDSHAKE') {
+        opp.name = data.name;
+        if (isHost) setTimeout(initGameData, 1000);
+    } 
+    else if (data.type === 'START_GAME') {
+        opp.name = data.oppName;
+        me.hand = data.yourHand;
+        opp.hand = data.oppHand;
+        isMyTurn = data.isYourTurn;
+        enterBattlefield();
+    }
+    else if (data.type === 'PLAY_CARD') {
+        processOpponentPlay(data.cardId, data.cardIndex);
+    }
+    else if (data.type === 'REDEAL') {
+        me.hand = data.yourHand;
+        opp.hand = data.oppHand;
+        isMyTurn = data.isYourTurn;
+        playCount = 0;
+        log("========= 每三回合重新发牌 =========", "#a6e3e9");
+        updateUI();
+        startTimer();
+    }
+    else if (data.type === 'REMATCH_REQ') {
+        rematchState.opp = true;
+        document.getElementById('rematch-status').innerText = `${opp.name} 已请求再来一把！`;
+        checkRematch();
+    }
+}
+
+// =============================
+// 3. 游戏核心逻辑
+// =============================
+function getRandomHand() {
+    return Array.from({length: 4}, () => cardDB[Math.floor(Math.random() * cardDB.length)]);
+}
+
+function initGameData() {
+    me.hand = getRandomHand();
+    opp.hand = getRandomHand();
+    isMyTurn = Math.random() > 0.5; // 随机先手
+    
+    conn.send({
+        type: 'START_GAME',
+        oppName: me.name,
+        yourHand: opp.hand,
+        oppHand: me.hand,
+        isYourTurn: !isMyTurn
+    });
+    enterBattlefield();
+}
+
+function enterBattlefield() {
+    document.getElementById('lobby').style.display = 'none';
+    document.getElementById('battlefield').style.display = 'block';
+    document.getElementById('rematch-modal').style.display = 'none';
+    document.getElementById('logs').innerHTML = '';
+    
+    me.hp = 30; opp.hp = 30; playCount = 0;
+    rematchState = { me: false, opp: false };
+    
+    log(`对局开始！${isMyTurn ? '你' : opp.name} 获得了先手。`, "#a6e3e9");
+    updateUI();
+    startTimer();
+}
+
+// 刷新画面与公开手牌
+function updateUI() {
+    document.getElementById('my-display-name').innerText = me.name;
+    document.getElementById('enemy-name').innerText = opp.name;
+    
+    document.getElementById('player-hp-text').innerText = me.hp.toFixed(1);
+    document.getElementById('player-hp-fill').style.width = Math.max(0, (me.hp / 30 * 100)) + '%';
+    
+    document.getElementById('enemy-hp-text').innerText = opp.hp.toFixed(1);
+    document.getElementById('enemy-hp-fill').style.width = Math.max(0, (opp.hp / 30 * 100)) + '%';
+    
+    // 渲染对手明牌
+    const eHandDiv = document.getElementById('enemy-hand');
+    eHandDiv.innerHTML = '';
+    opp.hand.forEach(c => {
+        eHandDiv.innerHTML += `
+            <div class="card enemy-card">
+                <div class="card-title">${c.name}</div>
+                <div>${c.desc}</div>
+            </div>`;
+    });
+
+    // 渲染我方手牌
+    const pHandDiv = document.getElementById('player-hand');
+    pHandDiv.innerHTML = '';
+    me.hand.forEach((c, index) => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `
+            <div class="card-title">${c.name}</div>
+            <div>${c.desc}</div>`;
+        div.onclick = () => playCard(c, index);
+        pHandDiv.appendChild(div);
+    });
+}
+
+function startTimer() {
+    clearInterval(turnTimer);
+    timeLeft = 30;
+    const tDiv = document.getElementById('timer');
+    
+    if (!isMyTurn) {
+        tDiv.innerText = "等待对手...";
+        tDiv.style.color = "#888";
+        return;
+    }
+
+    tDiv.style.color = "#ffd700";
+    turnTimer = setInterval(() => {
+        tDiv.innerText = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(turnTimer);
+            log("超时限制！系统已为你随机出牌", "#ff4757");
+            if (me.hand.length > 0) {
+                const randIndex = Math.floor(Math.random() * me.hand.length);
+                playCard(me.hand[randIndex], randIndex);
+            }
+        }
+        timeLeft--;
+    }, 1000);
+}
+
+// 主动出牌
+function playCard(card, index) {
+    if (!isMyTurn || me.hp <= 0 || opp.hp <= 0) return;
+    isMyTurn = false;
+    clearInterval(turnTimer);
+    
+    me.hand.splice(index, 1);
+    conn.send({ type: 'PLAY_CARD', cardId: card.id, cardIndex: index });
+    
+    log(`你 打出了 【${card.name}】`, "#00ff88");
+    applyEffect(card, me, opp);
+    
+    // 统治跳过回合逻辑
+    if (!card.skip) isMyTurn = false; 
+    else { log(`【统治】生效，你继续行动！`, "#a6e3e9"); isMyTurn = true; }
+    
+    checkTurnEnd();
+}
+
+// 被动接受对方出牌
+function processOpponentPlay(cardId, index) {
+    const card = cardDB.find(c => c.id === cardId);
+    opp.hand.splice(index, 1);
+    
+    log(`对手 打出了 【${card.name}】`, "#ff4757");
+    applyEffect(card, opp, me);
+    
+    if (!card.skip) isMyTurn = true;
+    checkTurnEnd();
+}
+
+function applyEffect(card, caster, target) {
+    if (card.dmg) target.hp -= card.dmg;
+    if (card.heal) caster.hp = Math.min(30, caster.hp + card.heal);
+    caster.hp = Math.max(0, caster.hp);
+    target.hp = Math.max(0, target.hp);
+    updateUI();
+}
+
+function checkTurnEnd() {
+    playCount++;
+    
+    // 检查死亡判定
+    if (me.hp <= 0 || opp.hp <= 0) {
+        clearInterval(turnTimer);
+        const win = me.hp > 0;
+        document.getElementById('rematch-modal').style.display = 'flex';
+        document.getElementById('result-title').innerText = win ? "胜利" : "败北";
+        document.getElementById('result-title').style.color = win ? "#00ff88" : "#ff4757";
+        document.getElementById('result-desc').innerText = "本轮战斗已结束";
+        
+        document.getElementById('btn-rematch').innerText = "再来一把";
+        document.getElementById('btn-rematch').disabled = false;
+        document.getElementById('rematch-status').innerText = "";
+        return;
+    }
+
+    // 每 3 个回合（共计 6 次出牌）由房主重洗
+    if (playCount >= 6 && isHost) {
+        me.hand = getRandomHand();
+        opp.hand = getRandomHand();
+        isMyTurn = true; // 洗牌后房主先手
+        conn.send({ type: 'REDEAL', yourHand: opp.hand, oppHand: me.hand, isYourTurn: false });
+        playCount = 0;
+        log("========= 每三回合重新发牌 =========", "#a6e3e9");
+    }
+
+    updateUI();
+    startTimer();
+}
+
+// =============================
+// 4. 再来一把 (无需重连)
+// =============================
+function requestRematch() {
+    rematchState.me = true;
+    document.getElementById('btn-rematch').innerText = "已发送请求...";
+    document.getElementById('btn-rematch').disabled = true;
+    conn.send({ type: 'REMATCH_REQ' });
+    checkRematch();
+}
+
+function checkRematch() {
+    if (rematchState.me && rematchState.opp) {
+        if (isHost) initGameData();
+    }
+}
+</script>
+</body>
+</html>

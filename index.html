@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通天塔图书馆</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+<div id="entry-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#0a0a0a; z-index:10000; display:flex; flex-direction:column; justify-content:center; align-items:center; transition: opacity 1s ease;">
+        <svg width="120" height="160" viewBox="0 0 100 120" style="margin-bottom: 30px;">
+            <path d="M20 110 L80 110 M30 110 L30 40 L50 20 L70 40 L70 110 M30 90 L70 90 M30 70 L70 70 M30 50 L70 50" stroke="#a6e3e9" stroke-width="2" fill="none" stroke-linecap="round" />
+            <path d="M10 115 L90 115" stroke="#a6e3e9" stroke-width="1" opacity="0.5" />
+            <circle cx="50" cy="15" r="2" fill="#ffd700" />
+        </svg>
+
+        <h1 style="color: #a6e3e9; font-size: 36px; letter-spacing: 8px; margin-bottom: 40px; text-shadow: 0 0 15px rgba(166,227,233,0.5);">通天塔图书馆</h1>
+        
+        <button id="btn-enter-game" class="battle-btn" style="padding: 15px 50px; font-size: 18px; background: transparent; border: 1px solid #a6e3e9; color: #a6e3e9; cursor: pointer; transition: all 0.3s;">
+            进入游戏
+        </button>
+        
+        <div style="position:absolute; bottom:30px; color:#444; font-size:12px; letter-spacing: 2px;">一条无尽的真理之路</div>
+    </div>
+    <header class="top-bar">
+        <button id="btn-collection">收藏</button>
+        <div class="direction-sense">方向感: <span id="ds-amount">0</span> (+<span id="ds-rate">0</span>/s)</div>
+        <button id="btn-personal">个人</button>
+    </header>
+
+    <main id="main-content">
+        <section id="page-home" class="page active">
+            <div id="frog" class="frog">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="160" height="160">
+        <path d="M 15 70 C 5 55, 5 85, 20 85" fill="none" stroke="#a6e3e9" stroke-width="8" stroke-linecap="round"/>
+        <path d="M 85 70 C 95 55, 95 85, 80 85" fill="none" stroke="#a6e3e9" stroke-width="8" stroke-linecap="round"/>
+        <ellipse cx="50" cy="65" rx="35" ry="25" fill="#e0f7fa" />
+        <circle cx="30" cy="45" r="14" fill="#e0f7fa" />
+        <circle cx="70" cy="45" r="14" fill="#e0f7fa" />
+        <circle cx="30" cy="43" r="8" fill="#ffffff" />
+        <circle cx="70" cy="43" r="8" fill="#ffffff" />
+        <circle cx="30" cy="43" r="3" fill="#222831" />
+        <circle cx="70" cy="43" r="3" fill="#222831" />
+        <path d="M 40 70 Q 50 78, 60 70" fill="none" stroke="#222831" stroke-width="3" stroke-linecap="round" />
+    </svg>
+</div>
+            </section>
+
+<section id="page-explore" class="page">
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+                
+                <div id="btn-floor-up" class="nav-arrow">
+                    <svg viewBox="0 0 24 24" width="40" height="40" stroke="#a6e3e9" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                </div>
+                
+                <div class="explore-header" style="text-align: center; margin: 5px 0;">
+                    <h2 id="explore-floor-title" style="letter-spacing: 2px;">第 1 层</h2>
+                    <p id="explore-floor-status" style="margin-top: 5px; font-size: 12px;"></p>
+                </div>
+
+                <div id="bookshelf-container" style="width: 100%;">
+                    </div>
+
+                <div id="btn-floor-down" class="nav-arrow">
+                    <svg viewBox="0 0 24 24" width="40" height="40" stroke="#a6e3e9" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+
+            </div>
+        </section>
+
+        <div id="reading-overlay">
+            <div id="reading-content">
+                </div>
+            <button id="btn-close-reading">退出阅读</button>
+        </div>
+
+        <section id="page-babel" class="page">
+            <a href="multiplayer.html" style="position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.5); color: #a6e3e9; border: 1px solid #a6e3e9; padding: 5px 15px; border-radius: 4px; cursor: pointer; z-index: 10; text-decoration: none; font-size: 13px; text-align: center; display: inline-block;">联机对战</a>
+            <div class="battle-arena">
+                <div class="entity enemy" style="text-align: center;">
+                    <img id="enemy-avatar" src="" style="width: 64px; height: 64px; margin-bottom: 8px; display: none; object-fit: cover;">
+                    <h3 id="enemy-name" style="margin-bottom: 8px;">无序者</h3>
+                    <div class="hp-bar" style="text-align: left;"><div id="enemy-hp-fill" class="hp-fill"></div></div>
+                    <div class="hp-text">HP: <span id="enemy-hp">--</span> / <span id="enemy-max-hp">--</span></div>
+                </div>
+                
+                <div class="battle-log" id="battle-log">
+                    <p>巴别塔底层，等待遭遇战...</p>
+                </div>
+
+                <div class="entity player">
+                    <h3>你</h3>
+                    <div class="hp-bar"><div id="player-hp-fill" class="hp-fill"></div></div>
+                    <div class="hp-text">HP: <span id="player-hp">10.0</span> / <span id="player-max-hp">10.0</span></div>
+                </div>
+
+<div id="action-area" style="min-height: 120px; position: relative;">
+ <div id="multiplayer-timer" style="display:none; position:absolute; top:-30px; right:10px; color:#ff4757; font-weight:bold; font-size:18px;">剩余时间: 30s</div>
+ <div id="enemy-hand" class="hand-cards" style="display:none; margin-bottom: 15px; border-bottom: 1px dashed #444; padding-bottom: 10px;"></div>
+ <div class="hand-cards" id="player-hand"> </div>
+                    
+<div id="action-dice" style="display:none; text-align:center; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 8px;">
+                        <div style="color:#ffd700; font-size:14px; margin-bottom:10px;">【三局两胜制】率先获得 2 胜者直接击杀对方！</div>
+                        <div style="display:flex; justify-content:space-around; margin-bottom:15px;">
+                            <div>无序者 (胜:<span id="dice-score-enemy" style="color:#ff6b6b">0</span>)<br><span id="dice-enemy" style="font-size:32px; color:#ff6b6b; font-weight:bold;">?</span></div>
+                            <div>你的点数 (胜:<span id="dice-score-player" style="color:#a6e3e9">0</span>)<br><span id="dice-player" style="font-size:32px; color:#a6e3e9; font-weight:bold;">?</span></div>
+                        </div>
+                        
+                        <div style="margin-bottom: 12px;">
+                            <label style="font-size:12px; color:#aaa;">注入方向感(可选): </label>
+                            <input type="number" id="dice-bet-input" style="width: 70px; background: #222; color: #e0e0e0; border: 1px solid #555; border-radius: 4px; padding: 3px 5px;" min="0" placeholder="0">
+                            <div id="dice-bet-limit" style="font-size:10px; color:#888; margin-top:4px;"></div>
+                        </div>
+
+                        <button id="btn-roll-dice" class="battle-btn" style="margin:0; width:60%;">掷出 20 面骰</button>
+                    </div>
+                    </div>
+
+                    <div id="action-typing" style="display:none; position:relative; text-align:center; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 8px;">
+                        <div style="position:absolute; left:10px; top:10px; width:30%; text-align:left; background:rgba(0,0,0,0.3); padding:8px; border-radius:4px;">
+                            <div style="font-size:12px; color:#aaa; margin-bottom:5px;">献祭光团含量(延长容忍时间)</div>
+                            <input type="number" id="typing-sacrifice" value="0" min="0" step="0.1" style="width:100%; background:#222; color:#fff; border:1px solid #444; padding:5px; margin-bottom:5px;">
+                            <div style="font-size:12px; color:#888;">当前单光团含量:<br><span id="typing-current-orb" style="color:#a6e3e9; font-weight:bold;">1.0</span></div>
+                        </div>
+                        
+                        <div style="margin-left:35%;">
+                            <button id="btn-start-typing" class="battle-btn" style="margin:0 0 10px 0; width:100%;">开始刻印</button>
+                            <div style="color:#ff6b6b; font-size:14px; font-weight:bold; margin-bottom:10px;">倒计时: <span id="typing-timer">--</span> 秒</div>
+                            <div id="typing-target" style="margin-bottom:10px; font-weight:bold; color:#fff; font-size: 20px; letter-spacing:4px; min-height: 28px; word-break: break-all;"></div>
+                            <input type="text" id="typing-input" placeholder="开始后在此抄写上方字母(不限大小写)..." style="width:100%; padding:10px; background:#222; color:#fff; border:1px solid #a6e3e9; border-radius: 4px; font-size:16px;" autocomplete="off" onpaste="return false;" disabled>
+                        </div>
+                    </div>
+                
+                <button id="btn-start-battle" class="battle-btn">开始新战斗</button>
+            </div>
+        </section>
+    </main>
+
+    <nav class="bottom-bar" style="display: flex; width: 100%; padding: 0;">
+        <button class="nav-btn active" data-target="page-home" style="flex: 1; margin: 0; border-radius: 0; border-right: 1px solid rgba(166, 227, 233, 0.3);">首页</button>
+        <button class="nav-btn" data-target="page-explore" style="flex: 1; margin: 0; border-radius: 0; border-right: 1px solid rgba(166, 227, 233, 0.3);">探索</button>
+        <button class="nav-btn" data-target="page-babel" style="flex: 1; margin: 0; border-radius: 0;">巴别塔</button>
+    </nav>
+<div id="modal-overlay" class="modal-overlay"></div>
+
+<div id="modal-offline" class="modal">
+        <h2 style="color: #a6e3e9; margin-bottom: 15px; letter-spacing: 2px; text-align: center;">时间的馈赠</h2>
+        <p id="offline-text" style="font-size: 14px; margin-bottom: 25px; line-height: 1.6; text-align: center; color: #e0e0e0;"></p>
+        <div style="text-align: center;">
+            <button class="close-btn" data-target="modal-offline" style="width: 120px; font-weight: bold;">确认</button>
+        </div>
+    </div>
+
+    <div id="modal-frog" class="modal">
+        <h3>🐸 青蛙培养</h3>
+        <p style="margin: 10px 0; color: #aaa; font-size: 14px;">消耗方向感来提升青蛙的能力。</p>
+        
+<div class="upgrade-item">
+            <div class="upgrade-info">
+                <strong>更加贪婪的青蛙</strong><br>
+                <span class="sub-text">减少青蛙收集光团的间隔时间</span>
+            </div>
+            <button id="upg-speed" class="upg-btn">升级: <span id="cost-speed">10</span></button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <strong>更有营养的食料</strong><br>
+                <span class="sub-text">提升光团包含的方向感 (需速度2.5秒/次，当前进度: <span id="speed-progress">0/10</span>，升级后重置)</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center;">
+                <button id="upg-value" class="upg-btn">升级: <span id="cost-value">10</span></button>
+                <span id="speed-req-warn" style="font-size: 12px; color: #ff6b6b; margin-top: 5px;">速度不足</span>
+            </div>
+        </div>
+        
+        <button class="close-btn" data-target="modal-frog">关闭弹窗</button>
+    </div>
+<div id="modal-message" class="modal">
+        <h3 id="modal-message-title">提示</h3>
+        <div id="modal-message-content" style="margin: 15px 0; font-size: 14px; line-height: 1.5; color: #ccc;"></div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button id="modal-message-cancel" class="close-btn" style="display: none; margin-top: 0; width: auto;">取消</button>
+            <button id="modal-message-confirm" class="close-btn" style="margin-top: 0; width: auto; background-color: #555;">确定</button>
+        </div>
+    </div>
+<div id="modal-card-buff" class="modal">
+    <h3 style="color: #ffd700;"> 灵光一现 (单次强化)</h3>
+    <p style="font-size: 14px; margin: 10px 0; color: #ccc;">
+        消耗大量方向感，使下一张出的牌获得极其强力的属性加成。
+    </p>
+    
+    <div style="background: rgba(166,227,233,0.1); padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #a6e3e9;">
+        <div style="font-size: 14px; color: #888; margin-bottom: 5px;">预计消耗方向感：</div>
+        <div id="buff-cost-display" style="font-size: 24px; color: #a6e3e9; font-weight: bold; font-family: monospace;">0</div>
+        <div style="font-size: 12px; color: #ff6b6b; margin-top: 8px;" id="buff-warning"></div>
+    </div>
+    
+    <div style="font-size: 13px; color: #aaa; line-height: 1.5;">
+        * 强化效果：攻击 +<span id="buff-preview-atk"></span>，减伤/治疗 +<span id="buff-preview-def"></span>
+    </div>
+    
+    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+        <button class="close-btn" data-target="modal-card-buff" style="width: auto; margin:0;">取消</button>
+        <button id="btn-confirm-buff" style="width: auto; background-color: #a6e3e9; color: #121212; margin:0; font-weight: bold;">确认注入</button>
+    </div>
+</div>
+<div id="modal-personal" class="modal">
+        <h3 style="color: #a6e3e9;">👤 个人中心</h3>
+        <div style="margin: 15px 0; font-size: 14px; color: #ccc; line-height: 1.8;">
+            <p><strong>片段收集:</strong> <span id="personal-collection-count">0</span> / 40 句</p>
+            <p><strong>巴别塔攀登:</strong> 第 <span id="personal-babel-floor">1</span> 层</p>
+            <p><strong>藏书解锁率:</strong> <span id="personal-book-count">0</span> / 180 本</p>
+        </div>
+        <p style="font-size: 12px; color: #ff6b6b; margin-bottom: 15px;">
+            ⚠️ 警告：启动回溯将抹除当前世界线（清空方向感、青蛙等级、楼层与卡牌），仅保留你的结局记录与收藏馆内容。
+        </p>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="close-btn" data-target="modal-personal" style="width: auto; margin:0;">继续探索</button>
+            <button id="btn-backtrack" style="width: auto; background-color: #ff6b6b; color: #121212; margin:0; font-weight: bold;">启动回溯</button>
+        </div>
+    </div>
+
+<div id="modal-collection" class="modal" style="width: 80%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="color: #ffd700; margin-bottom: 10px;">📚 收藏馆</h3>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <button class="battle-btn col-tab-btn" data-tab="col-achieve" style="margin:0; padding:8px 15px; font-size:14px; flex:1;">成就</button>
+            <button class="battle-btn col-tab-btn" data-tab="col-story" style="margin:0; padding:8px 15px; font-size:14px; flex:1;">故事</button>
+            <button class="battle-btn col-tab-btn" data-tab="col-ending" style="margin:0; padding:8px 15px; font-size:14px; flex:1;">结局</button>
+        </div>
+        
+        <div id="col-achieve" class="col-content" style="padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px;"></div>
+        <div id="col-story" class="col-content" style="display: none; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px;"></div>
+        <div id="col-ending" class="col-content" style="display: none; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px;"></div>
+        
+        <div style="text-align: right; margin-top:15px;">
+            <button class="close-btn" data-target="modal-collection" style="width:auto; margin:0;">关闭</button>
+        </div>
+    </div>
+
+    <div id="screen-ending" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:9999; flex-direction:column; justify-content:center; align-items:center; color:#fff; text-align:center; padding: 20px;">
+        <h1 id="ending-title" style="font-size: 48px; color: #a6e3e9; margin-bottom: 20px; letter-spacing: 5px;">结局名称</h1>
+        <p id="ending-desc" style="font-size: 18px; color: #ccc; max-width: 600px; line-height: 1.8; margin-bottom: 40px;">结局描述</p>
+        <button id="btn-reset-game" class="battle-btn" style="padding: 12px 40px; font-size: 16px;">接受命运 (世界重置)</button>
+    </div>
+
+<div id="modal-multiplayer" style="display:none !important; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.9); z-index:20000; display:flex; justify-content:center; align-items:center;">
+    <div style="background:#1a1a1a; padding:30px; border:1px solid #a6e3e9; width:90%; max-width:400px; text-align:center;">
+        <h2 style="color:#a6e3e9; margin-bottom:20px;">量子纠缠 (联机模式)</h2>
+        <div id="multiplayer-status" style="color:#a6e3e9; margin-bottom:10px; font-size:14px; text-align:center;">等待操作...</div>
+        
+        <div style="margin-bottom:15px; text-align:left;">
+            <label style="font-size:12px; color:#888;">我的 ID：</label>
+            <div id="my-peer-id" style="background:#000; padding:10px; border:1px dashed #555; color:#fff; word-break:break-all; cursor:pointer;">正在初始化...</div>
+        </div>
+        <div style="margin-bottom:15px; text-align:left;">
+            <label style="font-size:12px; color:#888;">设置临时昵称：</label>
+            <input type="text" id="my-nickname" placeholder="输入昵称..." style="width:100%; padding:8px; background:#000; color:#fff; border:1px solid #444; text-align:center;">
+        </div>
+        <div style="margin-bottom:20px; text-align:left;">
+            <label style="font-size:12px; color:#888;">对手 ID：</label>
+            <input type="text" id="opponent-id" placeholder="粘贴对手ID..." style="width:100%; padding:8px; background:#000; color:#fff; border:1px solid #a6e3e9; text-align:center;">
+        </div>
+        <button id="btn-connect-peer" style="padding:10px; background:#2c3e50; color:#a6e3e9; border:1px solid #a6e3e9; cursor:pointer; width:100%; margin-bottom:10px;">连接对手</button>
+        <button id="btn-force-close-multi" onclick="document.getElementById('modal-multiplayer').style.setProperty('display', 'none', 'important');" style="padding:10px; background:transparent; color:#888; border:1px solid #444; cursor:pointer; width:100%;">回到单机模式</button>
+    </div>
+</div>
+
+    <script src="data.js"></script>
+    <script src="idle.js"></script>
+    <script src="explore.js"></script>
+    <script src="combat.js"></script>
+    <script src="collection.js"></script>
+</body>
+</html>
