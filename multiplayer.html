@@ -8,25 +8,25 @@
     <style>
         body { background: #0a0a0a; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 10px; user-select: none; }
         .panel { background: #1a1a1a; border: 2px solid #a6e3e9; border-radius: 10px; padding: 15px; max-width: 600px; margin: 10px auto; position: relative; box-sizing: border-box; }
-        
+
         #my-id { color:#00ff88; cursor:pointer; text-decoration: underline; word-break: break-all; display: block; margin: 10px 0; }
-        
+
         button { background: #a6e3e9; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 5px; margin: 5px; transition: 0.2s; }
         button:hover { background: #85c1c7; }
         button:disabled { background: #555; color: #888; cursor: not-allowed; }
         input { padding: 10px; border: 1px solid #a6e3e9; border-radius: 5px; background: #000; color: #fff; text-align: center; margin: 5px 0; width: 90%; font-size: 16px; }
-        
+
         #battlefield, #rematch-modal { display: none; }
         .hand { display: flex; justify-content: center; gap: 8px; margin: 10px 0; min-height: 120px; flex-wrap: nowrap; }
-        
+
         .card { width: 30%; max-width: 100px; height: 140px; background: #2c3e50; border: 2px solid #a6e3e9; border-radius: 8px; padding: 8px; cursor: pointer; font-size: 11px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s ease; box-sizing: border-box; overflow: hidden; }
         .card:hover { transform: translateY(-5px); }
         .enemy-card { border-color: #ff4757; cursor: default; background: #3a1c1e; }
-        
+
         .card.disabled { opacity: 0.3; cursor: not-allowed; border-color: #888 !important; pointer-events: none; }
         .card.passive { border-color: #ffd700; background: #4a3b00; cursor: not-allowed; }
         .card-title { font-weight: bold; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 3px; }
-        
+
         @media screen and (max-width: 480px) {
             .card { height: 120px; padding: 5px; font-size: 10px; }
             .card-title { font-size: 11px; }
@@ -38,23 +38,25 @@
         .hp-fill { height: 100%; width: 100%; transition: width 0.3s; }
         .enemy-hp-fill { background: #ff4757; }
         .player-hp-fill { background: #00ff88; }
-        
+
         #timer { font-size: 28px; font-weight: bold; margin: 5px 0; color: #ffd700; }
         #logs { height: 100px; overflow-y: auto; background: #000; border: 1px solid #444; padding: 8px; font-size: 12px; text-align: left; border-radius: 5px; margin: 10px 0; }
         #rematch-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; justify-content: center; align-items: center; border-radius: 10px; }
 
-        body{background:#0d1816;color:#e3e8df;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;min-height:100dvh;padding:24px}
-        .panel{background:linear-gradient(145deg,#1c3027,#11221b);border:1px solid #d8b47740;border-radius:12px;padding:28px;max-width:760px}
+        body{background:#081124;color:#e3e8df;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;min-height:100dvh;padding:24px}
+        .panel{background:linear-gradient(145deg,#142744,#0d1930);border:1px solid #93b8df40;border-radius:12px;padding:28px;max-width:760px}
         h2{font-family:"Songti SC",serif;font-weight:400;letter-spacing:3px}
-        button{background:#c9d7b9;color:#16271c;min-height:44px;font-size:14px;font-weight:500}
-        input{background:#0c1a14;border-color:#a2ddc630;border-radius:6px;min-height:44px}
-        .card{max-width:none;width:32%;height:190px;padding:15px;font-size:14px;line-height:1.6;background:#22392d;border:1px solid #b8c59a50;color:#d5dec8}
-        .card-title{font:20px "Songti SC",serif;padding-bottom:12px;color:#e2d3ac}
-        .enemy-card{background:#302b22;border-color:#bd997b40}.card.passive{background:#323728;border-color:#d8b47760}
-        #logs{font-size:14px;line-height:1.7;background:#0b1812;border-color:#ffffff14;height:120px}
-        #my-id{color:#d8b477}button:focus-visible,input:focus-visible,.card:focus-visible{outline:2px solid #d8b477;outline-offset:3px}
+        button{background:#a6c8e9;color:#0c1830;min-height:44px;font-size:14px;font-weight:500}
+        input{background:#091328;border-color:#a2ddc630;border-radius:6px;min-height:44px}
+        .card{max-width:none;width:32%;height:190px;padding:15px;font-size:14px;line-height:1.6;background:#162c4b;border:1px solid #b8c59a50;color:#d2dff2}
+        .card-title{font:20px "Songti SC",serif;padding-bottom:12px;color:#c4daef}
+        .enemy-card{background:#261e33;border-color:#bd997b40}.card.passive{background:#1b2d46;border-color:#a6c8e960}
+        #logs{font-size:14px;line-height:1.7;background:#080f21;border-color:#ffffff14;height:120px}
+        #my-id{color:#a6c8e9}button:focus-visible,input:focus-visible,.card:focus-visible{outline:2px solid #a6c8e9;outline-offset:3px}
         @media(max-width:480px){body{padding:16px 8px}.panel{padding:18px 12px}.hand{flex-wrap:wrap}.card{font-size:14px;height:auto;min-height:155px;width:100%;padding:14px}.card-title{font-size:18px}}
         @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+        .lobby-intro{font-size:14px;line-height:1.8;color:#92aaca}#my-id{font:32px ui-monospace,monospace;letter-spacing:8px;color:#b6d5f4;cursor:text;text-decoration:none;user-select:text;padding:18px 0}#opp-id{text-transform:uppercase;letter-spacing:4px;max-width:310px}#btn-copy-room{background:#1b3251;color:#afcce7;border:1px solid #8cadcf40}.panel p{line-height:1.8}
     </style>
 </head>
 <body>
@@ -62,15 +64,15 @@
     <button onclick="window.location.href='index.html'" style="position:absolute; top:10px; left:10px; background:#444; color:#fff; padding:5px 10px; font-size:12px; z-index:10;">退出</button>
 
     <div id="lobby" class="panel" style="margin-top: 40px;">
-        <h2 style="color: #a6e3e9; margin-top:0;">联机终端</h2>
+        <h2 style="color: #a6e3e9; margin-top:0;">联机终端</h2><p class="lobby-intro">一人创建房间，另一人输入 6 位房间码。</p>
         <input aria-label="你的昵称" maxlength="30" type="text" id="my-name" placeholder="昵称..." value="探求者">
         <br>
-        <button onclick="initHost()" id="btn-host">作为房主</button>
-        <p style="font-size:12px; color:#888;">点击下方ID复制:</p>
-        <span id="my-id">等待生成...</span>
+        <button onclick="initHost()" id="btn-host">创建房间</button>
+        <p style="font-size:12px; color:#888;">你的 6 位房间码</p>
+        <span id="my-id" aria-live="polite">— — — — — —</span><button id="btn-copy-room" onclick="copyRoomCode()" disabled>复制房间码</button>
         <hr style="border-color:#444;">
-        <input aria-label="对手连接 ID" type="text" id="opp-id" placeholder="输入对手 ID...">
-        <button onclick="connectToHost()" id="btn-join">连接对手</button>
+        <input aria-label="6 位房间码" type="text" id="opp-id" placeholder="输入 6 位房间码" maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false">
+        <button onclick="connectToHost()" id="btn-join">加入房间</button>
         <p id="status-msg" style="color:#ffd700; font-size:14px;"></p>
     </div>
 
@@ -89,10 +91,10 @@
         </div>
         <div class="hp-bar"><div id="enemy-hp-fill" class="hp-fill enemy-hp-fill"></div></div>
         <div id="enemy-hand" class="hand"></div>
-        
+
         <div id="timer">30</div>
         <div id="logs"></div>
-        
+
         <div id="player-hand" class="hand"></div>
         <div class="hp-bar"><div id="player-hp-fill" class="hp-fill player-hp-fill"></div></div>
         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -101,6 +103,7 @@
         </div>
     </div>
 
+<script src="room-code.js"></script>
 <script>
 // =============================
 // 1. 卡牌数据库
@@ -143,35 +146,145 @@ let gameOver = true;
 function showStatus(msg, color="#ffd700") { const el = document.getElementById('status-msg'); if(el) { el.innerText = msg; el.style.color = color; } }
 function log(msg, color="#fff") { const box = document.getElementById('logs'); if(box) { const line = document.createElement('div'); line.style.color=color; line.textContent=msg; box.appendChild(line); box.scrollTop = box.scrollHeight; } }
 
-function initHost() {
-    if(typeof Peer==='undefined'){showStatus("联机服务暂时不可用，请稍后重试。");return;}
-    document.getElementById('btn-host').disabled = true; showStatus("生成ID中...");
-    peer = new Peer({ config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] } });
-    peer.on('open', id => { 
-        const idSpan = document.getElementById('my-id');
-        idSpan.innerText = id;
-        idSpan.onclick = () => { navigator.clipboard.writeText(id).then(() => alert("ID已复制")); };
-        showStatus("等待连接...", "#00ff88"); 
+let networkGeneration = 0;
+let networkTimeout = null;
+let currentRoomCode = null;
+
+function setLobbyBusy(busy) {
+    document.getElementById('btn-host').disabled = busy;
+    document.getElementById('btn-join').disabled = busy;
+}
+
+function disposeNetwork() {
+    networkGeneration++;
+    clearTimeout(networkTimeout);
+    clearInterval(turnTimer);
+    const old = peer;
+    peer = null;
+    conn = null;
+    old?.destroy();
+}
+
+function networkFailure(message) {
+    disposeNetwork();
+    gameOver = true;
+    isMyTurn = false;
+    currentRoomCode = null;
+    document.getElementById('my-id').textContent = '— — — — — —';
+    document.getElementById('btn-copy-room').disabled = true;
+    setLobbyBusy(false);
+    showStatus(message, '#cda1b3');
+}
+
+function initHost(attempt = 0) {
+    if (typeof Peer === 'undefined') {
+        showStatus('联机服务未加载，请检查网络后刷新。');
+        return;
+    }
+    disposeNetwork();
+    const generation = networkGeneration;
+    currentRoomCode = BabelRoomCode.generate();
+    const code = currentRoomCode;
+    setLobbyBusy(true);
+    showStatus('正在创建房间…');
+    peer = new Peer(BabelRoomCode.peerId(code), {
+        config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
     });
-    peer.on('connection', c => { if(conn?.open){c.close();return;} isHost = true; setupConn(c); });
-    peer.on('error', () => { showStatus('连接失败，请检查网络或对手 ID。'); document.getElementById('btn-host').disabled=false; document.getElementById('btn-join').disabled=false; });
+    networkTimeout = setTimeout(() => {
+        if (generation === networkGeneration) networkFailure('创建超时，请重试。');
+    }, 15000);
+    peer.on('open', () => {
+        if (generation !== networkGeneration) return;
+        clearTimeout(networkTimeout);
+        document.getElementById('my-id').textContent = code;
+        document.getElementById('btn-copy-room').disabled = false;
+        showStatus('房间已创建。让朋友输入这 6 位房间码加入。', '#a6c8e9');
+    });
+    peer.on('connection', connection => {
+        if (generation !== networkGeneration || conn) {
+            connection.close();
+            return;
+        }
+        isHost = true;
+        setupConn(connection);
+    });
+    peer.on('error', error => {
+        if (generation !== networkGeneration) return;
+        if (error.type === 'unavailable-id' && attempt < 4) {
+            initHost(attempt + 1);
+            return;
+        }
+        networkFailure('房间创建失败，请重试或检查网络。');
+    });
 }
 
 function connectToHost() {
-    if(typeof Peer==='undefined'){showStatus("联机服务暂时不可用，请稍后重试。");return;}
-    const id = document.getElementById('opp-id').value.trim(); if(!id) return;
-    document.getElementById('btn-join').disabled = true;
-    if (!peer) peer = new Peer();
-    const connect = () => { const c = peer.connect(id, { reliable: true }); isHost = false; setupConn(c); };
-    if(peer.open) connect(); else peer.once('open', connect);
-    peer.on('error', () => { showStatus('无法连接，请检查对手 ID 和网络。'); document.getElementById('btn-join').disabled=false; });
+    if (typeof Peer === 'undefined') {
+        showStatus('联机服务未加载，请检查网络后刷新。');
+        return;
+    }
+    const code = BabelRoomCode.normalize(document.getElementById('opp-id').value);
+    if (!code) {
+        showStatus('请输入 6 位房间码；不区分大小写。');
+        return;
+    }
+    disposeNetwork();
+    const generation = networkGeneration;
+    setLobbyBusy(true);
+    showStatus('正在加入房间 ' + code + '…');
+    peer = new Peer();
+    networkTimeout = setTimeout(() => {
+        if (generation === networkGeneration) networkFailure('连接超时，请确认房主仍在房间内，并检查双方网络。');
+    }, 15000);
+    peer.on('open', () => {
+        if (generation !== networkGeneration) return;
+        isHost = false;
+        setupConn(peer.connect(BabelRoomCode.peerId(code), { reliable: true }));
+    });
+    peer.on('error', error => {
+        if (generation !== networkGeneration) return;
+        networkFailure(error.type === 'peer-unavailable' ? '房间不存在或已关闭，请核对房间码。' : '连接失败，请检查网络后重试。');
+    });
 }
 
-function setupConn(c) {
-    conn = c; me.name = document.getElementById('my-name').value.trim() || "探求者";
-    conn.on('open', () => { conn.send({ type: 'HANDSHAKE', name: me.name }); });
-    conn.on('data', data => handleData(data));
-    conn.on('close', () => { gameOver=true;isMyTurn=false;clearInterval(turnTimer);log('连接已断开。返回大厅后可重新连接。');document.getElementById('timer').innerText='连接已断开'; });
+async function copyRoomCode() {
+    if (!currentRoomCode) return;
+    try {
+        await navigator.clipboard.writeText(currentRoomCode);
+        showStatus('已复制 6 位房间码。', '#a6c8e9');
+    } catch {
+        showStatus('无法自动复制，请手动选中上方房间码。');
+    }
+}
+
+function setupConn(connection) {
+    conn = connection;
+    const generation = networkGeneration;
+    me.name = document.getElementById('my-name').value.trim().slice(0, 30) || '探求者';
+    let sentHandshake = false;
+    const onOpen = () => {
+        if (generation !== networkGeneration || sentHandshake) return;
+        clearTimeout(networkTimeout);
+        sentHandshake = true;
+        connection.send({ type: 'HANDSHAKE', name: me.name });
+    };
+    connection.on('open', onOpen);
+    if (connection.open) onOpen();
+    connection.on('data', data => {
+        if (generation === networkGeneration) handleData(data);
+    });
+    connection.on('error', () => {
+        if (generation === networkGeneration) networkFailure('连接中断，请返回大厅重新加入。');
+    });
+    connection.on('close', () => {
+        if (generation !== networkGeneration) return;
+        gameOver = true;
+        isMyTurn = false;
+        clearInterval(turnTimer);
+        log('对方已离开。返回大厅后可重新创建房间。');
+        document.getElementById('timer').innerText = '连接已断开';
+        setLobbyBusy(false);
+    });
 }
 
 function handleData(data) {
@@ -182,7 +295,7 @@ function handleData(data) {
     else if (data.type === 'START_GAME') {
         me = createPlayer(me.name); opp = createPlayer(typeof data.oppName==='string'?data.oppName.slice(0,30):'对手');
         me.hand = data.yourHand; opp.hand = data.oppHand; isMyTurn = data.isYourTurn;
-        enterBattlefield(true); 
+        enterBattlefield(true);
     }
     else if (data.type === 'PLAY_CARD') { processOpponentPlay(data.cardId, data.cardIndex); }
     else if (data.type === 'SKIP_TURN') { processOpponentSkip(); }
@@ -225,7 +338,7 @@ function enterBattlefield(checkFaith) {
     document.getElementById('lobby').style.display = 'none'; document.getElementById('battlefield').style.display = 'block';
     document.getElementById('rematch-modal').style.display = 'none';
     me.hp = 30; opp.hp = 30; me.maxHp = 30; opp.maxHp = 30;
-    if (checkFaith) applyFaithLogic(); 
+    if (checkFaith) applyFaithLogic();
     updateHPUI(); renderHands(); startTimer();
 }
 
@@ -338,14 +451,14 @@ function checkTurnEnd(active, target) {
         return;
     }
     playCount++;
-    
+
     // 【修复点】：不篡改既定回合逻辑，只同步发送对立的回合指令
     if (playCount >= 6 && isHost) {
         let pHand = getRandomHand(false), eHand = getRandomHand(false);
         // 发送 !isMyTurn，顺延原本正确的回合所属权，不再无脑置为 false
         conn.send({ type: 'REDEAL', yourHand: eHand, oppHand: pHand, isYourTurn: !isMyTurn });
         me.hand = pHand; opp.hand = eHand; me.usedCards = []; opp.usedCards = []; playCount = 0;
-        
+
         // 【修复点】：给房主也补上重组提示
         log("========= 三回合结束，系统重组了手牌 =========", "#a6e3e9");
         renderHands(); startTimer();

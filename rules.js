@@ -1,6 +1,6 @@
 /* Shared, deterministic rules. No DOM or storage access. */
 (function(root) {
-    const fresh = () => ({saveVersion:2,directionSense:0,frogSpeedLevel:0,frogValueLevel:0,valueUpgradeCount:0,speedUpgradeCount:0,unlockedFloors:[1],unlockedBooks:[],babelFloor:1,babelOrbBonus:0,towerCompleted:false,babelPlayerCards:[],babelEnemyCards:[],babelChallengeType:null,babelEnemyHp:null,battleSnapshot:null,collectedFragments:[],achievedEndings:[],completedStories:[],collectionFragments:[],collectionStories:[],resetCount:0,lastSaveTime:0});
+    const fresh = () => ({saveVersion:2,directionSense:0,frogSpeedLevel:0,frogValueLevel:0,valueUpgradeCount:0,speedUpgradeCount:0,unlockedFloors:[1],unlockedBooks:[],babelFloor:1,babelOrbBonus:0,towerCompleted:false,babelPlayerCards:[],babelEnemyCards:[],babelChallengeType:null,babelEnemyHp:null,battleSnapshot:null,battlePreparation:null,collectedFragments:[],achievedEndings:[],completedStories:[],collectionFragments:[],collectionStories:[],resetCount:0,lastSaveTime:0});
     function normalize(raw) {
         const d=fresh(); if(!raw || typeof raw!=='object' || Array.isArray(raw))return d;
         Object.keys(d).forEach(k=>{if(raw[k]!==undefined)d[k]=raw[k]});
@@ -14,7 +14,7 @@
         if(raw.speedUpgradeCount===undefined)d.speedUpgradeCount=d.frogSpeedLevel;
         if(raw.valueUpgradeCount===undefined)d.valueUpgradeCount=Math.floor(d.frogValueLevel);
         d.babelFloor=Math.min(99,Math.max(1,Math.floor(d.babelFloor)));
-        d.babelOrbBonus=Math.max(0,Math.min(495,d.babelOrbBonus));
+        d.babelOrbBonus=Math.max(0,Math.min(693,d.babelOrbBonus));
         for(const k of ['collectedFragments','completedStories','collectionFragments','collectionStories','achievedEndings','babelPlayerCards','babelEnemyCards']) d[k]=[...new Set((Array.isArray(d[k])?d[k]:[]).filter(v=>typeof v==='string'))];
         for(const [k,lo,hi] of [['unlockedFloors',1,9],['unlockedBooks',0,179]])d[k]=[...new Set((Array.isArray(d[k])?d[k]:[]).filter(v=>Number.isInteger(v)&&v>=lo&&v<=hi))];
         if(!d.unlockedFloors.includes(1))d.unlockedFloors.unshift(1);

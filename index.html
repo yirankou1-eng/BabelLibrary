@@ -18,7 +18,7 @@
     <aside class="sidebar">
         <div class="sidebar-caption">馆 内 导 览</div>
         <nav class="bottom-bar" aria-label="游戏区域">
-            <button class="nav-btn active" data-target="page-home"><span class="nav-number">01</span>静谧庭院<span class="nav-arrow-small">↗</span></button>
+            <button class="nav-btn active" data-target="page-home"><span class="nav-number">01</span>图书馆<span class="nav-arrow-small">↗</span></button>
             <button class="nav-btn" data-target="page-explore"><span class="nav-number">02</span>藏书回廊<span class="nav-arrow-small">↗</span></button>
             <button class="nav-btn" data-target="page-babel"><span class="nav-number">03</span>巴别试炼<span class="nav-arrow-small">↗</span></button>
         </nav>
@@ -27,9 +27,9 @@
     </aside>
     <main id="main-content">
         <section id="page-home" class="page active">
-            <div class="page-heading"><div><span class="eyebrow">THE QUIET COURTYARD</span><h1>静谧庭院<span class="heading-dot">.</span></h1></div><span class="location-tag">图书馆 · 起点</span></div>
+            <div class="page-heading"><div><span class="eyebrow">THE LIBRARY OF BABEL</span><h1>图书馆<span class="heading-dot">.</span></h1></div><span class="location-tag">无尽书海</span></div>
             <div class="home-layout"><div class="courtyard" id="orb-field">
-                <div class="scene-caption"><span class="eyebrow">收 集 微 光</span><h2>每一点光，<br>都是新的方向。</h2><p>轻触光团收集方向感。<br>你的青蛙也会自动替你收集。</p></div>
+                <div class="scene-caption"><span class="eyebrow">收 集 微 光</span><h2>通天塔图书馆</h2><p>轻触光团收集方向感。<br>你的青蛙也会自动替你收集。</p></div>
                 <div class="scene-coordinates">BABEL / 00 : 01</div>
             <div id="frog" class="frog">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="160" height="160">
@@ -47,7 +47,7 @@
 </div>
             <div class="frog-label">守馆者<small>点击培养 ↗</small></div><div class="scene-footer"><span><i class="live-dot"></i> 自动收集中</span><span>离线收益最多累计 8 小时</span></div>
             </div>
-            <aside class="home-panel"><div class="panel-title"><span class="eyebrow">KEEPER'S NOTES</span><h2>守馆手记</h2></div>
+            <aside class="home-panel"><div class="panel-title"><span class="eyebrow">LIBRARIAN'S NOTES</span><h2>守馆手记</h2></div>
                 <div class="next-step"><span class="note-index">下一步</span><h3 id="goal-title">培养你的守馆者</h3><p id="goal-description">积攒 15 点方向感，提升第一次收集速度。</p><progress aria-label="下一次培养或探索所需方向感" id="goal-progress" value="0" max="15"></progress><button id="goal-action" class="primary-button">培养青蛙 <span>↗</span></button></div>
                 <div class="keeper-stats"><div><span>收集间隔</span><strong id="home-interval">7.5 秒</strong></div><div><span>每团方向感</span><strong id="home-value">1.00</strong></div><div><span>探索加成</span><strong id="home-bonus">+0%</strong></div></div>
                 <p class="quiet-note">翻阅藏书收集片段，完成试炼提升光团价值。</p>
@@ -78,20 +78,27 @@
         </section>
 
         <div id="reading-overlay">
-            <div class="reading-heading"><span id="reading-book-label">藏书阅读</span><label><input id="reading-light" type="checkbox"> 全页照明</label><span>移动寻找片段，点击提取 · Esc 返回</span></div>
-            <div id="reading-content">
+            <div class="reading-heading"><span id="reading-book-label">藏书阅读</span><span class="reading-help">移动或拖动光圈寻找句子 · 方向键移动，Enter 提取 · Esc 返回</span></div>
+            <div id="reading-content" tabindex="0" role="region" aria-label="暗室阅读区，方向键移动光圈，Enter 提取照亮的句子">
                 </div>
-            <button id="btn-close-reading">退出阅读</button>
+            <div id="reading-status" role="status" aria-live="polite"></div><button id="btn-close-reading">退出阅读</button>
         </div>
 
         <section id="page-babel" class="page">
             <div class="page-heading"><div><span class="eyebrow">THE TOWER OF BABEL</span><h1>巴别试炼<span class="heading-dot">.</span></h1></div><a class="location-tag" href="multiplayer.html">联机对战 ↗</a></div><div class="battle-meta"><span id="battle-floor">第 1 层</span><span id="battle-phase">准备出发</span><span id="battle-reward">获胜可提升光团价值</span></div>
+            <section id="battle-preparation" class="battle-preparation" aria-label="战前构筑">
+                <div class="preparation-heading"><div><span class="eyebrow">战 前 整 备</span><h2>五张候选，三张入塔</h2></div><span id="draft-count">已选择 0 / 3</span></div>
+                <p class="preparation-help">每层候选牌固定。失败后可以重新构筑，战斗开始后不能换牌。</p>
+                <div id="draft-cards" class="draft-cards"></div>
+                <fieldset class="trial-routes"><legend>选择本层试炼</legend><div id="trial-routes"></div></fieldset>
+                <div id="draft-combos" class="draft-combos"></div>
+            </section>
             <div class="battle-arena">
                 <div class="entity enemy" style="text-align: center;">
                     <img id="enemy-avatar" alt="无序者" src="card-enemy.jpg" style="width: 64px; height: 64px; margin-bottom: 8px; display: none; object-fit: cover;">
                     <h3 id="enemy-name" style="margin-bottom: 8px;">无序者</h3>
                     <div class="hp-bar" style="text-align: left;"><div id="enemy-hp-fill" class="hp-fill"></div></div>
-                    <p id="enemy-intent" class="enemy-intent">战斗开始后可预览对手的下一张牌</p><div class="hp-text">HP: <span id="enemy-hp">--</span> / <span id="enemy-max-hp">--</span></div>
+                    <p id="enemy-status" class="enemy-intent">无序者的下一次行动不可知</p><div class="hp-text">HP: <span id="enemy-hp">--</span> / <span id="enemy-max-hp">--</span></div>
                 </div>
                 
                 <div class="battle-log" id="battle-log" role="log" aria-live="polite">
@@ -107,7 +114,7 @@
 <div id="action-area" style="min-height: 120px; position: relative;">
  <div id="multiplayer-timer" style="display:none; position:absolute; top:-30px; right:10px; color:#ff4757; font-weight:bold; font-size:18px;">剩余时间: 30s</div>
  <div id="enemy-hand" class="hand-cards" style="display:none; margin-bottom: 15px; border-bottom: 1px dashed #444; padding-bottom: 10px;"></div>
- <div class="hand-cards" id="player-hand"> </div>
+ <div id="battle-combo-status" class="battle-combo-status" aria-live="polite"></div><div class="hand-cards" id="player-hand"> </div>
                     
 <div id="action-dice" style="display:none; text-align:center; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 8px;">
                         <div style="color:#ffd700; font-size:14px; margin-bottom:10px;">先得两胜 · 平局重掷</div>
@@ -239,6 +246,7 @@
     <script src="rules.js"></script>
     <script src="idle.js"></script>
     <script src="explore.js"></script>
+    <script src="strategy.js"></script>
     <script src="battle-engine.js"></script>
     <script src="combat.js"></script>
     <script src="collection.js"></script>
