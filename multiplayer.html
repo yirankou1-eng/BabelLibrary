@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>巴别塔 - 联机模式</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
@@ -42,6 +42,19 @@
         #timer { font-size: 28px; font-weight: bold; margin: 5px 0; color: #ffd700; }
         #logs { height: 100px; overflow-y: auto; background: #000; border: 1px solid #444; padding: 8px; font-size: 12px; text-align: left; border-radius: 5px; margin: 10px 0; }
         #rematch-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; justify-content: center; align-items: center; border-radius: 10px; }
+
+        body{background:#0d1816;color:#e3e8df;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;min-height:100dvh;padding:24px}
+        .panel{background:linear-gradient(145deg,#1c3027,#11221b);border:1px solid #d8b47740;border-radius:12px;padding:28px;max-width:760px}
+        h2{font-family:"Songti SC",serif;font-weight:400;letter-spacing:3px}
+        button{background:#c9d7b9;color:#16271c;min-height:44px;font-size:14px;font-weight:500}
+        input{background:#0c1a14;border-color:#a2ddc630;border-radius:6px;min-height:44px}
+        .card{max-width:none;width:32%;height:190px;padding:15px;font-size:14px;line-height:1.6;background:#22392d;border:1px solid #b8c59a50;color:#d5dec8}
+        .card-title{font:20px "Songti SC",serif;padding-bottom:12px;color:#e2d3ac}
+        .enemy-card{background:#302b22;border-color:#bd997b40}.card.passive{background:#323728;border-color:#d8b47760}
+        #logs{font-size:14px;line-height:1.7;background:#0b1812;border-color:#ffffff14;height:120px}
+        #my-id{color:#d8b477}button:focus-visible,input:focus-visible,.card:focus-visible{outline:2px solid #d8b477;outline-offset:3px}
+        @media(max-width:480px){body{padding:16px 8px}.panel{padding:18px 12px}.hand{flex-wrap:wrap}.card{font-size:14px;height:auto;min-height:155px;width:100%;padding:14px}.card-title{font-size:18px}}
+        @media(prefers-reduced-motion:reduce){*{transition:none!important}}
     </style>
 </head>
 <body>
@@ -50,13 +63,13 @@
 
     <div id="lobby" class="panel" style="margin-top: 40px;">
         <h2 style="color: #a6e3e9; margin-top:0;">联机终端</h2>
-        <input type="text" id="my-name" placeholder="昵称..." value="探求者">
+        <input aria-label="你的昵称" maxlength="30" type="text" id="my-name" placeholder="昵称..." value="探求者">
         <br>
         <button onclick="initHost()" id="btn-host">作为房主</button>
         <p style="font-size:12px; color:#888;">点击下方ID复制:</p>
         <span id="my-id">等待生成...</span>
         <hr style="border-color:#444;">
-        <input type="text" id="opp-id" placeholder="输入对手 ID...">
+        <input aria-label="对手连接 ID" type="text" id="opp-id" placeholder="输入对手 ID...">
         <button onclick="connectToHost()" id="btn-join">连接对手</button>
         <p id="status-msg" style="color:#ffd700; font-size:14px;"></p>
     </div>
@@ -122,14 +135,16 @@ function createPlayer(name) {
 let me = createPlayer("探求者");
 let opp = createPlayer("对手");
 let rematchState = { me: false, opp: false };
+let gameOver = true;
 
 // =============================
 // 2. 网络层
 // =============================
 function showStatus(msg, color="#ffd700") { const el = document.getElementById('status-msg'); if(el) { el.innerText = msg; el.style.color = color; } }
-function log(msg, color="#fff") { const box = document.getElementById('logs'); if(box) { box.innerHTML += `<div style="color:${color}; margin-bottom:4px;">${msg}</div>`; box.scrollTop = box.scrollHeight; } }
+function log(msg, color="#fff") { const box = document.getElementById('logs'); if(box) { const line = document.createElement('div'); line.style.color=color; line.textContent=msg; box.appendChild(line); box.scrollTop = box.scrollHeight; } }
 
 function initHost() {
+    if(typeof Peer==='undefined'){showStatus("联机服务暂时不可用，请稍后重试。");return;}
     document.getElementById('btn-host').disabled = true; showStatus("生成ID中...");
     peer = new Peer({ config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] } });
     peer.on('open', id => { 
@@ -138,27 +153,34 @@ function initHost() {
         idSpan.onclick = () => { navigator.clipboard.writeText(id).then(() => alert("ID已复制")); };
         showStatus("等待连接...", "#00ff88"); 
     });
-    peer.on('connection', c => { isHost = true; setupConn(c); });
+    peer.on('connection', c => { if(conn?.open){c.close();return;} isHost = true; setupConn(c); });
+    peer.on('error', () => { showStatus('连接失败，请检查网络或对手 ID。'); document.getElementById('btn-host').disabled=false; document.getElementById('btn-join').disabled=false; });
 }
 
 function connectToHost() {
+    if(typeof Peer==='undefined'){showStatus("联机服务暂时不可用，请稍后重试。");return;}
     const id = document.getElementById('opp-id').value.trim(); if(!id) return;
     document.getElementById('btn-join').disabled = true;
     if (!peer) peer = new Peer();
-    const c = peer.connect(id, { reliable: true });
-    isHost = false; setupConn(c);
+    const connect = () => { const c = peer.connect(id, { reliable: true }); isHost = false; setupConn(c); };
+    if(peer.open) connect(); else peer.once('open', connect);
+    peer.on('error', () => { showStatus('无法连接，请检查对手 ID 和网络。'); document.getElementById('btn-join').disabled=false; });
 }
 
 function setupConn(c) {
     conn = c; me.name = document.getElementById('my-name').value.trim() || "探求者";
     conn.on('open', () => { conn.send({ type: 'HANDSHAKE', name: me.name }); });
     conn.on('data', data => handleData(data));
+    conn.on('close', () => { gameOver=true;isMyTurn=false;clearInterval(turnTimer);log('连接已断开。返回大厅后可重新连接。');document.getElementById('timer').innerText='连接已断开'; });
 }
 
 function handleData(data) {
-    if (data.type === 'HANDSHAKE') { opp.name = data.name; if (isHost) setTimeout(() => initGameData(true), 500); }
+    if(!data || typeof data!=='object')return;
+    const validHand=h=>Array.isArray(h)&&h.length===3&&h.every(c=>c&&cardDB.some(x=>x.id===c.id));
+    if(['START_GAME','REDEAL'].includes(data.type)){if(isHost||!validHand(data.yourHand)||!validHand(data.oppHand))return;data.yourHand=data.yourHand.map(c=>cardDB.find(x=>x.id===c.id));data.oppHand=data.oppHand.map(c=>cardDB.find(x=>x.id===c.id));}
+    if (data.type === 'HANDSHAKE') { opp.name = typeof data.name==='string'?data.name.slice(0,30):'对手'; if (isHost) setTimeout(() => initGameData(true), 500); }
     else if (data.type === 'START_GAME') {
-        me = createPlayer(me.name); opp = createPlayer(data.oppName);
+        me = createPlayer(me.name); opp = createPlayer(typeof data.oppName==='string'?data.oppName.slice(0,30):'对手');
         me.hand = data.yourHand; opp.hand = data.oppHand; isMyTurn = data.isYourTurn;
         enterBattlefield(true); 
     }
@@ -197,6 +219,9 @@ function initGameData(isFirst) {
 }
 
 function enterBattlefield(checkFaith) {
+    gameOver=false;playCount=0;rematchState={me:false,opp:false};
+    document.getElementById('logs').textContent='';
+    document.getElementById('my-display-name').textContent=me.name;document.getElementById('enemy-name').textContent=opp.name;
     document.getElementById('lobby').style.display = 'none'; document.getElementById('battlefield').style.display = 'block';
     document.getElementById('rematch-modal').style.display = 'none';
     me.hp = 30; opp.hp = 30; me.maxHp = 30; opp.maxHp = 30;
@@ -229,13 +254,13 @@ function renderHands() {
         let div = document.createElement('div');
         div.className = 'card' + (c.passive?' passive':'') + ((c.once&&me.usedCards.includes(i))?' disabled':'');
         div.innerHTML = `<div class="card-title">${c.name}</div><div>${c.desc}</div>`;
-        if(!c.passive && !(c.once&&me.usedCards.includes(i))) div.onclick = () => playCard(c, i);
+        if(!c.passive && !(c.once&&me.usedCards.includes(i))) { div.onclick = () => playCard(c, i); div.tabIndex=0;div.setAttribute('role','button');div.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();div.click();}}; }
         pHandDiv.appendChild(div);
     });
 }
 
 function startTimer() {
-    clearInterval(turnTimer); timeLeft = 30;
+    clearInterval(turnTimer); if(gameOver)return; timeLeft = 30;
     const tDiv = document.getElementById('timer');
     if(!isMyTurn) { tDiv.innerText = "等待对手"; return; }
     turnTimer = setInterval(() => {
@@ -255,7 +280,7 @@ function executeDamage(amt, target) {
     if (target.effects.immuneNext) { log(`> ${target.name} 免疫了伤害！`, "#00ff88"); target.effects.immuneNext = false; return 0; }
     let final = amt - target.effects.reduceNextTaken + target.effects.vulnNextTaken;
     target.effects.reduceNextTaken = 0; target.effects.vulnNextTaken = 0;
-    final = Math.max(0, final); target.hp -= final;
+    final = Math.max(0, final); target.hp = Math.max(0, target.hp - final);
     return final;
 }
 
@@ -274,14 +299,14 @@ function applyEffect(card, caster, target) {
     }
     if (card.heal) { caster.hp = Math.min(caster.maxHp, caster.hp + card.heal); log(`恢复了 ${card.heal} 生命`); }
     if (card.id === 'education') caster.effects.educateNext = true;
-    if (card.id === 'creation') target.effects.reduceNextTaken = 1.0;
+    if (card.id === 'creation') caster.effects.reduceNextTaken = 1.0;
     if (card.id === 'crime') caster.effects.vulnNextTaken = 1.0;
     if (card.id === 'study') { caster.effects.immuneNext = true; caster.effects.boostNextDealt = 1.0; }
     if (card.id === 'service') caster.effects.serviceTurns = 4;
 }
 
 function playCard(card, i) {
-    if(!isMyTurn) return; isMyTurn = false; clearInterval(turnTimer);
+    if(gameOver||!isMyTurn||!card||me.hand[i]?.id!==card.id||card.passive||(card.once&&me.usedCards.includes(i))) return; isMyTurn = false; clearInterval(turnTimer);
     if(card.once) me.usedCards.push(i);
     conn.send({ type: 'PLAY_CARD', cardId: card.id, cardIndex: i });
     log(`你 打出了 【${card.name}】`, "#00ff88");
@@ -292,6 +317,7 @@ function playCard(card, i) {
 
 function processOpponentPlay(id, i) {
     const card = cardDB.find(c => c.id === id);
+    if(gameOver||isMyTurn||!card||opp.hand[i]?.id!==id||card.passive||(card.once&&opp.usedCards.includes(i)))return;
     if(card.once) opp.usedCards.push(i);
     log(`对手 打出了 【${card.name}】`, "#ff4757");
     applyEffect(card, opp, me);
@@ -299,12 +325,13 @@ function processOpponentPlay(id, i) {
     checkTurnEnd(opp, me);
 }
 
-function processOpponentSkip() { log("对手跳过回合"); isMyTurn = true; checkTurnEnd(opp, me); }
+function processOpponentSkip() { if(gameOver||isMyTurn)return;log("对手跳过回合"); isMyTurn = true; checkTurnEnd(opp, me); }
 
 function checkTurnEnd(active, target) {
     if (active.effects.serviceTurns > 0) { executeDamage(1.0, target); active.effects.serviceTurns--; log("【服务】造成1.0额外伤害", "#ff8c00"); }
     updateHPUI(); renderHands();
     if (me.hp <= 0 || opp.hp <= 0) {
+        gameOver=true;isMyTurn=false;
         clearInterval(turnTimer);
         document.getElementById('rematch-modal').style.display = 'flex';
         document.getElementById('result-title').innerText = me.hp > 0 ? "胜利" : "败北";

@@ -1,36 +1,36 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>通天塔图书馆</title>
+    <title>通天塔图书馆 · Babel Library</title>
+    <meta name="description" content="收集微光，寻找失落的故事，挑战九十九层巴别塔。">
     <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <link rel="stylesheet" href="atelier.css">
 </head>
 <body>
-<div id="entry-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#0a0a0a; z-index:10000; display:flex; flex-direction:column; justify-content:center; align-items:center; transition: opacity 1s ease;">
-        <svg width="120" height="160" viewBox="0 0 100 120" style="margin-bottom: 30px;">
-            <path d="M20 110 L80 110 M30 110 L30 40 L50 20 L70 40 L70 110 M30 90 L70 90 M30 70 L70 70 M30 50 L70 50" stroke="#a6e3e9" stroke-width="2" fill="none" stroke-linecap="round" />
-            <path d="M10 115 L90 115" stroke="#a6e3e9" stroke-width="1" opacity="0.5" />
-            <circle cx="50" cy="15" r="2" fill="#ffd700" />
-        </svg>
-
-        <h1 style="color: #a6e3e9; font-size: 36px; letter-spacing: 8px; margin-bottom: 40px; text-shadow: 0 0 15px rgba(166,227,233,0.5);">通天塔图书馆</h1>
-        
-        <button id="btn-enter-game" class="battle-btn" style="padding: 15px 50px; font-size: 18px; background: transparent; border: 1px solid #a6e3e9; color: #a6e3e9; cursor: pointer; transition: all 0.3s;">
-            进入游戏
-        </button>
-        
-        <div style="position:absolute; bottom:30px; color:#444; font-size:12px; letter-spacing: 2px;">一条无尽的真理之路</div>
-    </div>
-    <header class="top-bar">
-        <button id="btn-collection">收藏</button>
-        <div class="direction-sense">方向感: <span id="ds-amount">0</span> (+<span id="ds-rate">0</span>/s)</div>
-        <button id="btn-personal">个人</button>
+<header class="top-bar">
+        <a class="brand" href="index.html"><span class="brand-mark">B.</span><span>通天塔图书馆<small>BABEL LIBRARY</small></span></a>
+        <div class="direction-sense"><span class="resource-spark">✦</span><span><small>方向感</small><strong id="ds-amount">0</strong></span><span class="rate">+<span id="ds-rate">0</span> / 秒</span></div>
+        <div class="header-actions"><button id="btn-collection">收藏馆</button><button id="btn-personal">旅人档案</button></div>
     </header>
-
+    <div class="workspace">
+    <aside class="sidebar">
+        <div class="sidebar-caption">馆 内 导 览</div>
+        <nav class="bottom-bar" aria-label="游戏区域">
+            <button class="nav-btn active" data-target="page-home"><span class="nav-number">01</span>静谧庭院<span class="nav-arrow-small">↗</span></button>
+            <button class="nav-btn" data-target="page-explore"><span class="nav-number">02</span>藏书回廊<span class="nav-arrow-small">↗</span></button>
+            <button class="nav-btn" data-target="page-babel"><span class="nav-number">03</span>巴别试炼<span class="nav-arrow-small">↗</span></button>
+        </nav>
+        <div class="journey-summary"><span class="eyebrow">本次旅程</span><div><span>故事片段</span><strong><span id="side-fragments">0</span> / 40</strong></div><div><span>已阅藏书</span><strong><span id="side-books">0</span> / 180</strong></div><div><span>试炼楼层</span><strong><span id="side-floor">1</span> / 99</strong></div></div>
+        <div class="sidebar-bottom"><span class="live-dot"></span><span id="save-status">进度保存在此设备</span><p>于无穷之中，寻找有意义的一句。</p></div>
+    </aside>
     <main id="main-content">
         <section id="page-home" class="page active">
+            <div class="page-heading"><div><span class="eyebrow">THE QUIET COURTYARD</span><h1>静谧庭院<span class="heading-dot">.</span></h1></div><span class="location-tag">图书馆 · 起点</span></div>
+            <div class="home-layout"><div class="courtyard" id="orb-field">
+                <div class="scene-caption"><span class="eyebrow">收 集 微 光</span><h2>每一点光，<br>都是新的方向。</h2><p>轻触光团收集方向感。<br>你的青蛙也会自动替你收集。</p></div>
+                <div class="scene-coordinates">BABEL / 00 : 01</div>
             <div id="frog" class="frog">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="160" height="160">
         <path d="M 15 70 C 5 55, 5 85, 20 85" fill="none" stroke="#a6e3e9" stroke-width="8" stroke-linecap="round"/>
@@ -45,14 +45,22 @@
         <path d="M 40 70 Q 50 78, 60 70" fill="none" stroke="#222831" stroke-width="3" stroke-linecap="round" />
     </svg>
 </div>
+            <div class="frog-label">守馆者<small>点击培养 ↗</small></div><div class="scene-footer"><span><i class="live-dot"></i> 自动收集中</span><span>离线收益最多累计 8 小时</span></div>
+            </div>
+            <aside class="home-panel"><div class="panel-title"><span class="eyebrow">KEEPER'S NOTES</span><h2>守馆手记</h2></div>
+                <div class="next-step"><span class="note-index">下一步</span><h3 id="goal-title">培养你的守馆者</h3><p id="goal-description">积攒 15 点方向感，提升第一次收集速度。</p><progress aria-label="下一次培养或探索所需方向感" id="goal-progress" value="0" max="15"></progress><button id="goal-action" class="primary-button">培养青蛙 <span>↗</span></button></div>
+                <div class="keeper-stats"><div><span>收集间隔</span><strong id="home-interval">7.5 秒</strong></div><div><span>每团方向感</span><strong id="home-value">1.00</strong></div><div><span>探索加成</span><strong id="home-bonus">+0%</strong></div></div>
+                <p class="quiet-note">翻阅藏书收集片段，完成试炼提升光团价值。</p>
+            </aside></div>
+            <div class="home-paths"><button class="path-card" data-go="page-explore"><span class="path-number">I</span><span><strong>在杂乱文字里，发现故事</strong><small>藏书回廊 · 九层书架，四十枚片段</small></span><span>↗</span></button><button class="path-card" data-go="page-babel"><span class="path-number">II</span><span><strong>以你的选择，回应无序</strong><small>巴别试炼 · 策略卡牌与命运骰子</small></span><span>↗</span></button></div>
             </section>
 
-<section id="page-explore" class="page">
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+<section id="page-explore" class="page"><div class="page-heading"><div><span class="eyebrow">THE ARCHIVE</span><h1>藏书回廊<span class="heading-dot">.</span></h1></div><span class="location-tag">9 层 · 180 卷</span></div>
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: auto;">
                 
-                <div id="btn-floor-up" class="nav-arrow">
+                <button id="btn-floor-up" class="nav-arrow" aria-label="前往上一层">
                     <svg viewBox="0 0 24 24" width="40" height="40" stroke="#a6e3e9" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
-                </div>
+                </button>
                 
                 <div class="explore-header" style="text-align: center; margin: 5px 0;">
                     <h2 id="explore-floor-title" style="letter-spacing: 2px;">第 1 层</h2>
@@ -62,35 +70,36 @@
                 <div id="bookshelf-container" style="width: 100%;">
                     </div>
 
-                <div id="btn-floor-down" class="nav-arrow">
+                <button id="btn-floor-down" class="nav-arrow" aria-label="前往下一层">
                     <svg viewBox="0 0 24 24" width="40" height="40" stroke="#a6e3e9" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </div>
+                </button>
 
             </div>
         </section>
 
         <div id="reading-overlay">
+            <div class="reading-heading"><span id="reading-book-label">藏书阅读</span><label><input id="reading-light" type="checkbox"> 全页照明</label><span>移动寻找片段，点击提取 · Esc 返回</span></div>
             <div id="reading-content">
                 </div>
             <button id="btn-close-reading">退出阅读</button>
         </div>
 
         <section id="page-babel" class="page">
-            <a href="multiplayer.html" style="position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.5); color: #a6e3e9; border: 1px solid #a6e3e9; padding: 5px 15px; border-radius: 4px; cursor: pointer; z-index: 10; text-decoration: none; font-size: 13px; text-align: center; display: inline-block;">联机对战</a>
+            <div class="page-heading"><div><span class="eyebrow">THE TOWER OF BABEL</span><h1>巴别试炼<span class="heading-dot">.</span></h1></div><a class="location-tag" href="multiplayer.html">联机对战 ↗</a></div><div class="battle-meta"><span id="battle-floor">第 1 层</span><span id="battle-phase">准备出发</span><span id="battle-reward">获胜可提升光团价值</span></div>
             <div class="battle-arena">
                 <div class="entity enemy" style="text-align: center;">
-                    <img id="enemy-avatar" src="" style="width: 64px; height: 64px; margin-bottom: 8px; display: none; object-fit: cover;">
+                    <img id="enemy-avatar" alt="无序者" src="card-enemy.jpg" style="width: 64px; height: 64px; margin-bottom: 8px; display: none; object-fit: cover;">
                     <h3 id="enemy-name" style="margin-bottom: 8px;">无序者</h3>
                     <div class="hp-bar" style="text-align: left;"><div id="enemy-hp-fill" class="hp-fill"></div></div>
-                    <div class="hp-text">HP: <span id="enemy-hp">--</span> / <span id="enemy-max-hp">--</span></div>
+                    <p id="enemy-intent" class="enemy-intent">战斗开始后可预览对手的下一张牌</p><div class="hp-text">HP: <span id="enemy-hp">--</span> / <span id="enemy-max-hp">--</span></div>
                 </div>
                 
-                <div class="battle-log" id="battle-log">
+                <div class="battle-log" id="battle-log" role="log" aria-live="polite">
                     <p>巴别塔底层，等待遭遇战...</p>
                 </div>
 
                 <div class="entity player">
-                    <h3>你</h3>
+                    <h3>旅人 <span id="player-status" class="entity-status"></span></h3>
                     <div class="hp-bar"><div id="player-hp-fill" class="hp-fill"></div></div>
                     <div class="hp-text">HP: <span id="player-hp">10.0</span> / <span id="player-max-hp">10.0</span></div>
                 </div>
@@ -101,47 +110,28 @@
  <div class="hand-cards" id="player-hand"> </div>
                     
 <div id="action-dice" style="display:none; text-align:center; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 8px;">
-                        <div style="color:#ffd700; font-size:14px; margin-bottom:10px;">【三局两胜制】率先获得 2 胜者直接击杀对方！</div>
+                        <div style="color:#ffd700; font-size:14px; margin-bottom:10px;">先得两胜 · 平局重掷</div>
                         <div style="display:flex; justify-content:space-around; margin-bottom:15px;">
                             <div>无序者 (胜:<span id="dice-score-enemy" style="color:#ff6b6b">0</span>)<br><span id="dice-enemy" style="font-size:32px; color:#ff6b6b; font-weight:bold;">?</span></div>
                             <div>你的点数 (胜:<span id="dice-score-player" style="color:#a6e3e9">0</span>)<br><span id="dice-player" style="font-size:32px; color:#a6e3e9; font-weight:bold;">?</span></div>
                         </div>
                         
                         <div style="margin-bottom: 12px;">
-                            <label style="font-size:12px; color:#aaa;">注入方向感(可选): </label>
+                            <label for="dice-bet-input" style="font-size:14px; color:#aaa;">注入方向感（可选）</label>
                             <input type="number" id="dice-bet-input" style="width: 70px; background: #222; color: #e0e0e0; border: 1px solid #555; border-radius: 4px; padding: 3px 5px;" min="0" placeholder="0">
-                            <div id="dice-bet-limit" style="font-size:10px; color:#888; margin-top:4px;"></div>
+                            <div id="dice-bet-limit" style="font-size:12px; color:#a4b29f; margin-top:8px; line-height:1.8;"></div>
                         </div>
 
                         <button id="btn-roll-dice" class="battle-btn" style="margin:0; width:60%;">掷出 20 面骰</button>
                     </div>
                     </div>
 
-                    <div id="action-typing" style="display:none; position:relative; text-align:center; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 8px;">
-                        <div style="position:absolute; left:10px; top:10px; width:30%; text-align:left; background:rgba(0,0,0,0.3); padding:8px; border-radius:4px;">
-                            <div style="font-size:12px; color:#aaa; margin-bottom:5px;">献祭光团含量(延长容忍时间)</div>
-                            <input type="number" id="typing-sacrifice" value="0" min="0" step="0.1" style="width:100%; background:#222; color:#fff; border:1px solid #444; padding:5px; margin-bottom:5px;">
-                            <div style="font-size:12px; color:#888;">当前单光团含量:<br><span id="typing-current-orb" style="color:#a6e3e9; font-weight:bold;">1.0</span></div>
-                        </div>
-                        
-                        <div style="margin-left:35%;">
-                            <button id="btn-start-typing" class="battle-btn" style="margin:0 0 10px 0; width:100%;">开始刻印</button>
-                            <div style="color:#ff6b6b; font-size:14px; font-weight:bold; margin-bottom:10px;">倒计时: <span id="typing-timer">--</span> 秒</div>
-                            <div id="typing-target" style="margin-bottom:10px; font-weight:bold; color:#fff; font-size: 20px; letter-spacing:4px; min-height: 28px; word-break: break-all;"></div>
-                            <input type="text" id="typing-input" placeholder="开始后在此抄写上方字母(不限大小写)..." style="width:100%; padding:10px; background:#222; color:#fff; border:1px solid #a6e3e9; border-radius: 4px; font-size:16px;" autocomplete="off" onpaste="return false;" disabled>
-                        </div>
-                    </div>
-                
                 <button id="btn-start-battle" class="battle-btn">开始新战斗</button>
             </div>
         </section>
     </main>
 
-    <nav class="bottom-bar" style="display: flex; width: 100%; padding: 0;">
-        <button class="nav-btn active" data-target="page-home" style="flex: 1; margin: 0; border-radius: 0; border-right: 1px solid rgba(166, 227, 233, 0.3);">首页</button>
-        <button class="nav-btn" data-target="page-explore" style="flex: 1; margin: 0; border-radius: 0; border-right: 1px solid rgba(166, 227, 233, 0.3);">探索</button>
-        <button class="nav-btn" data-target="page-babel" style="flex: 1; margin: 0; border-radius: 0;">巴别塔</button>
-    </nav>
+    </div>
 <div id="modal-overlay" class="modal-overlay"></div>
 
 <div id="modal-offline" class="modal">
@@ -154,7 +144,7 @@
 
     <div id="modal-frog" class="modal">
         <h3>🐸 青蛙培养</h3>
-        <p style="margin: 10px 0; color: #aaa; font-size: 14px;">消耗方向感来提升青蛙的能力。</p>
+        <p style="margin: 10px 0; color: #aaa; font-size: 14px;">每次培养都会提升实际收益，食料升级保留收集速度。</p>
         
 <div class="upgrade-item">
             <div class="upgrade-info">
@@ -166,7 +156,7 @@
         <div class="upgrade-item">
             <div class="upgrade-info">
                 <strong>更有营养的食料</strong><br>
-                <span class="sub-text">提升光团包含的方向感 (需速度2.5秒/次，当前进度: <span id="speed-progress">0/10</span>，升级后重置)</span>
+                <span class="sub-text">提升光团包含的方向感 (需要收集间隔达到2.5秒，速度进度: <span id="speed-progress">0/10</span>)</span>
             </div>
             <div style="display: flex; flex-direction: column; align-items: center;">
                 <button id="upg-value" class="upg-btn">升级: <span id="cost-value">10</span></button>
@@ -187,7 +177,7 @@
 <div id="modal-card-buff" class="modal">
     <h3 style="color: #ffd700;"> 灵光一现 (单次强化)</h3>
     <p style="font-size: 14px; margin: 10px 0; color: #ccc;">
-        消耗大量方向感，使下一张出的牌获得极其强力的属性加成。
+        消耗方向感，为下一张主动打出的牌增加 5 点伤害与 2 点减伤或治疗。
     </p>
     
     <div style="background: rgba(166,227,233,0.1); padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #a6e3e9;">
@@ -245,32 +235,13 @@
         <button id="btn-reset-game" class="battle-btn" style="padding: 12px 40px; font-size: 16px;">接受命运 (世界重置)</button>
     </div>
 
-<div id="modal-multiplayer" style="display:none !important; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.9); z-index:20000; display:flex; justify-content:center; align-items:center;">
-    <div style="background:#1a1a1a; padding:30px; border:1px solid #a6e3e9; width:90%; max-width:400px; text-align:center;">
-        <h2 style="color:#a6e3e9; margin-bottom:20px;">量子纠缠 (联机模式)</h2>
-        <div id="multiplayer-status" style="color:#a6e3e9; margin-bottom:10px; font-size:14px; text-align:center;">等待操作...</div>
-        
-        <div style="margin-bottom:15px; text-align:left;">
-            <label style="font-size:12px; color:#888;">我的 ID：</label>
-            <div id="my-peer-id" style="background:#000; padding:10px; border:1px dashed #555; color:#fff; word-break:break-all; cursor:pointer;">正在初始化...</div>
-        </div>
-        <div style="margin-bottom:15px; text-align:left;">
-            <label style="font-size:12px; color:#888;">设置临时昵称：</label>
-            <input type="text" id="my-nickname" placeholder="输入昵称..." style="width:100%; padding:8px; background:#000; color:#fff; border:1px solid #444; text-align:center;">
-        </div>
-        <div style="margin-bottom:20px; text-align:left;">
-            <label style="font-size:12px; color:#888;">对手 ID：</label>
-            <input type="text" id="opponent-id" placeholder="粘贴对手ID..." style="width:100%; padding:8px; background:#000; color:#fff; border:1px solid #a6e3e9; text-align:center;">
-        </div>
-        <button id="btn-connect-peer" style="padding:10px; background:#2c3e50; color:#a6e3e9; border:1px solid #a6e3e9; cursor:pointer; width:100%; margin-bottom:10px;">连接对手</button>
-        <button id="btn-force-close-multi" onclick="document.getElementById('modal-multiplayer').style.setProperty('display', 'none', 'important');" style="padding:10px; background:transparent; color:#888; border:1px solid #444; cursor:pointer; width:100%;">回到单机模式</button>
-    </div>
-</div>
-
     <script src="data.js"></script>
+    <script src="rules.js"></script>
     <script src="idle.js"></script>
     <script src="explore.js"></script>
+    <script src="battle-engine.js"></script>
     <script src="combat.js"></script>
     <script src="collection.js"></script>
+    <script src="ui.js"></script>
 </body>
 </html>
