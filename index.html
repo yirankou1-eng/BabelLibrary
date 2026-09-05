@@ -12,7 +12,7 @@
 <header class="top-bar">
         <a class="brand" href="index.html"><span class="brand-mark">B.</span><span>通天塔图书馆<small>BABEL LIBRARY</small></span></a>
         <div class="direction-sense"><span class="resource-spark">✦</span><span><small>方向感</small><strong id="ds-amount">0</strong></span><span class="rate">+<span id="ds-rate">0</span> / 秒</span></div>
-        <div class="header-actions"><button id="btn-collection">收藏馆</button><button id="btn-personal">旅人档案</button></div>
+        <div class="header-actions"><button id="btn-tutorial">入馆指南</button><button id="btn-collection">收藏馆</button><button id="btn-personal">旅人档案</button></div>
     </header>
     <div class="workspace">
     <aside class="sidebar">
@@ -31,21 +31,40 @@
             <div class="home-layout"><div class="courtyard" id="orb-field">
                 <div class="scene-caption"><span class="eyebrow">收 集 微 光</span><h2>通天塔图书馆</h2><p>轻触光团收集方向感。<br>你的青蛙也会自动替你收集。</p></div>
                 <div class="scene-coordinates">BABEL / 00 : 01</div>
-            <div id="frog" class="frog">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="160" height="160">
-        <path d="M 15 70 C 5 55, 5 85, 20 85" fill="none" stroke="#a6e3e9" stroke-width="8" stroke-linecap="round"/>
-        <path d="M 85 70 C 95 55, 95 85, 80 85" fill="none" stroke="#a6e3e9" stroke-width="8" stroke-linecap="round"/>
-        <ellipse cx="50" cy="65" rx="35" ry="25" fill="#e0f7fa" />
-        <circle cx="30" cy="45" r="14" fill="#e0f7fa" />
-        <circle cx="70" cy="45" r="14" fill="#e0f7fa" />
-        <circle cx="30" cy="43" r="8" fill="#ffffff" />
-        <circle cx="70" cy="43" r="8" fill="#ffffff" />
-        <circle cx="30" cy="43" r="3" fill="#222831" />
-        <circle cx="70" cy="43" r="3" fill="#222831" />
-        <path d="M 40 70 Q 50 78, 60 70" fill="none" stroke="#222831" stroke-width="3" stroke-linecap="round" />
+            <div id="frog" class="frog" role="img" aria-label="抱着书的守馆青蛙">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="180" height="180" aria-hidden="true">
+        <defs>
+            <radialGradient id="frog-skin" cx="36%" cy="20%" r="85%"><stop offset="0" stop-color="#c7f7f4"/><stop offset=".48" stop-color="#78c5d3"/><stop offset="1" stop-color="#326887"/></radialGradient>
+            <radialGradient id="frog-belly" cx="45%" cy="35%" r="75%"><stop offset="0" stop-color="#e0f7fa"/><stop offset="1" stop-color="#7bb8cb"/></radialGradient>
+        </defs>
+        <g class="frog-body">
+            <path d="M 18 66 C 4 54, 2 84, 22 84" fill="#427f9c" stroke="#8ad1de" stroke-width="2" stroke-linecap="round"/>
+            <path d="M 82 66 C 96 54, 98 84, 78 84" fill="#427f9c" stroke="#8ad1de" stroke-width="2" stroke-linecap="round"/>
+            <ellipse cx="50" cy="64" rx="34" ry="24" fill="url(#frog-skin)" stroke="#b1e7ee" stroke-width="1"/>
+            <ellipse cx="50" cy="71" rx="21" ry="13" fill="url(#frog-belly)" opacity=".9"/>
+            <circle cx="30" cy="44" r="14" fill="url(#frog-skin)" stroke="#b1e7ee" stroke-width="1"/>
+            <circle cx="70" cy="44" r="14" fill="url(#frog-skin)" stroke="#b1e7ee" stroke-width="1"/>
+            <g class="frog-eyes">
+                <circle cx="30" cy="43" r="8" fill="#e8f5fc"/>
+                <circle cx="70" cy="43" r="8" fill="#e8f5fc"/>
+                <ellipse cx="31" cy="44" rx="4" ry="5" fill="#11243d"/>
+                <ellipse cx="69" cy="44" rx="4" ry="5" fill="#11243d"/>
+                <circle cx="29.5" cy="41.5" r="1.8" fill="#ffffff"/>
+                <circle cx="67.5" cy="41.5" r="1.8" fill="#ffffff"/>
+            </g>
+            <path d="M 40 66 Q 50 73, 60 66" fill="none" stroke="#214b66" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="24" cy="61" r="2" fill="#4f8aa3" opacity=".75"/><circle cx="76" cy="61" r="2" fill="#4f8aa3" opacity=".75"/>
+            <g class="frog-book">
+                <path d="M 33 73 Q 42 69, 50 74 L 50 88 Q 42 83, 34 86 Z" fill="#e6d9b4" stroke="#b69b67" stroke-width="1"/>
+                <path d="M 67 73 Q 58 69, 50 74 L 50 88 Q 58 83, 66 86 Z" fill="#e6d9b4" stroke="#b69b67" stroke-width="1"/>
+                <path d="M 34 86 Q 42 82, 50 88 Q 58 82, 66 86" fill="none" stroke="#713d4b" stroke-width="3" stroke-linecap="round"/>
+                <path d="M 50 75 L 50 87" stroke="#9e8353" stroke-width="1"/>
+            </g>
+            <path d="M 29 79 L 22 85 M 33 80 L 29 87 M 67 80 L 71 87 M 71 79 L 78 85" fill="none" stroke="#9bdbe4" stroke-width="3" stroke-linecap="round"/>
+        </g>
     </svg>
 </div>
-            <div class="frog-label">守馆者<small>点击培养 ↗</small></div><div class="scene-footer"><span><i class="live-dot"></i> 自动收集中</span><span>离线收益最多累计 8 小时</span></div>
+            <div class="frog-label">守馆者<small id="frog-cycle">第 1 轮训练</small><small>点击培养 ↗</small></div><div class="scene-footer"><span><i class="live-dot"></i> 自动收集中</span><span>离线收益最多累计 8 小时</span></div>
             </div>
             <aside class="home-panel"><div class="panel-title"><span class="eyebrow">LIBRARIAN'S NOTES</span><h2>守馆手记</h2></div>
                 <div class="next-step"><span class="note-index">下一步</span><h3 id="goal-title">培养你的守馆者</h3><p id="goal-description">积攒 15 点方向感，提升第一次收集速度。</p><progress aria-label="下一次培养或探索所需方向感" id="goal-progress" value="0" max="15"></progress><button id="goal-action" class="primary-button">培养青蛙 <span>↗</span></button></div>
@@ -87,8 +106,8 @@
         <section id="page-babel" class="page">
             <div class="page-heading"><div><span class="eyebrow">THE TOWER OF BABEL</span><h1>巴别试炼<span class="heading-dot">.</span></h1></div><a class="location-tag" href="multiplayer.html">联机对战 ↗</a></div><div class="battle-meta"><span id="battle-floor">第 1 层</span><span id="battle-phase">准备出发</span><span id="battle-reward">获胜可提升光团价值</span></div>
             <section id="battle-preparation" class="battle-preparation" aria-label="战前构筑">
-                <div class="preparation-heading"><div><span class="eyebrow">战 前 整 备</span><h2>五张候选，三张入塔</h2></div><span id="draft-count">已选择 0 / 3</span></div>
-                <p class="preparation-help">每层候选牌固定。失败后可以重新构筑，战斗开始后不能换牌。</p>
+                <div class="preparation-heading"><div><span class="eyebrow">战 前 整 备</span><h2>随机手牌，谨慎应战</h2></div><span id="draft-count">随机三张</span></div>
+                <p class="preparation-help">入塔时随机发三张牌，本层失败或刷新均保留手牌。选择出牌顺序与承担的风险。</p>
                 <div id="draft-cards" class="draft-cards"></div>
                 <fieldset class="trial-routes"><legend>选择本层试炼</legend><div id="trial-routes"></div></fieldset>
                 <div id="draft-combos" class="draft-combos"></div>
@@ -151,7 +170,7 @@
 
     <div id="modal-frog" class="modal">
         <h3>🐸 青蛙培养</h3>
-        <p style="margin: 10px 0; color: #aaa; font-size: 14px;">每次培养都会提升实际收益，食料升级保留收集速度。</p>
+        <p style="margin: 10px 0; color: #aaa; font-size: 14px;">训练速度至 2.5 秒后可进阶食料。食料价值提升，速度归位至 7.5 秒，再次训练。</p>
         
 <div class="upgrade-item">
             <div class="upgrade-info">
@@ -167,7 +186,7 @@
             </div>
             <div style="display: flex; flex-direction: column; align-items: center;">
                 <button id="upg-value" class="upg-btn">升级: <span id="cost-value">10</span></button>
-                <span id="speed-req-warn" style="font-size: 12px; color: #ff6b6b; margin-top: 5px;">速度不足</span>
+                <p id="food-preview" class="food-preview"></p><span id="speed-req-warn" style="font-size: 12px; color: #ff6b6b; margin-top: 5px;">速度不足</span>
             </div>
         </div>
         
@@ -242,6 +261,16 @@
         <button id="btn-reset-game" class="battle-btn" style="padding: 12px 40px; font-size: 16px;">接受命运 (世界重置)</button>
     </div>
 
+    <div id="tutorial-overlay" class="tutorial-overlay" hidden>
+        <section class="tutorial-panel" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+            <header><span class="eyebrow">入 馆 指 南 · 独 立 练 习</span><button id="tutorial-dismiss" aria-label="暂时关闭教程">稍后再学</button></header>
+            <progress id="tutorial-progress" max="5" value="1" aria-label="教程进度"></progress>
+            <h2 id="tutorial-title"></h2><p id="tutorial-description"></p>
+            <div id="tutorial-practice"></div><p id="tutorial-feedback" role="status" aria-live="polite"></p>
+            <footer><button id="tutorial-back">上一步</button><span id="tutorial-step"></span><button id="tutorial-next" class="primary-button">下一步</button></footer>
+            <small class="tutorial-footnote">练习区不改变正式资源、藏书或战斗。随时从“入馆指南”重学。</small>
+        </section>
+    </div>
     <script src="data.js"></script>
     <script src="rules.js"></script>
     <script src="idle.js"></script>
@@ -251,5 +280,6 @@
     <script src="combat.js"></script>
     <script src="collection.js"></script>
     <script src="ui.js"></script>
+    <script src="tutorial.js"></script>
 </body>
 </html>

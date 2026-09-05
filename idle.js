@@ -1,7 +1,7 @@
 const SAVE_KEY='babel_library_save';
 let gameData=BabelRules.fresh();
-let saveAvailable=true,storageCorrupt=false,offlineEarnings=0;
-try{const raw=localStorage.getItem(SAVE_KEY);if(raw){try{gameData=BabelRules.normalize(JSON.parse(raw));}catch{localStorage.setItem(SAVE_KEY+'_corrupt_backup',raw);storageCorrupt=true;}}}catch{saveAvailable=false;}
+let saveAvailable=true,storageCorrupt=false,offlineEarnings=0,hadExistingSave=false;
+try{const raw=localStorage.getItem(SAVE_KEY);if(raw){hadExistingSave=true;try{gameData=BabelRules.normalize(JSON.parse(raw));}catch{localStorage.setItem(SAVE_KEY+'_corrupt_backup',raw);storageCorrupt=true;}}}catch{saveAvailable=false;}
 const getSpeedCost=()=>BabelRules.speedCost(gameData);
 const getValueCost=()=>BabelRules.valueCost(gameData);
 const getFrogInterval=()=>BabelRules.interval(gameData);
@@ -10,19 +10,22 @@ function saveGame(){gameData.lastSaveTime=Date.now();try{localStorage.setItem(SA
 function setText(id,value){const e=document.getElementById(id);if(e)e.textContent=value;}
 function updateUI(){
     setText('ds-amount',Math.floor(gameData.directionSense).toLocaleString('zh-CN'));setText('ds-rate',(getOrbValue()/(getFrogInterval()/1000)).toFixed(2));
-    setText('cost-speed',gameData.frogSpeedLevel>=10?'已满级':getSpeedCost());setText('cost-value',getValueCost());setText('speed-progress',gameData.frogSpeedLevel+'/10');
+    setText('cost-speed',gameData.frogSpeedLevel>=10?'本轮完成':getSpeedCost());setText('cost-value',getValueCost());setText('speed-progress',gameData.frogSpeedLevel+'/10');
     const speed=document.getElementById('upg-speed'),value=document.getElementById('upg-value');
     speed.disabled=gameData.frogSpeedLevel>=10||gameData.directionSense<getSpeedCost();value.disabled=gameData.frogSpeedLevel<10||gameData.directionSense<getValueCost();
     speed.className='upg-btn '+(speed.disabled?'btn-unaffordable':'btn-affordable');value.className='upg-btn '+(value.disabled?'btn-unaffordable':'btn-affordable');
     document.getElementById('speed-req-warn').style.display=gameData.frogSpeedLevel<10?'block':'none';
     setText('side-fragments',gameData.collectedFragments.length);setText('side-books',gameData.unlockedBooks.length);setText('side-floor',gameData.babelFloor);
     setText('home-interval',(getFrogInterval()/1000).toFixed(1)+' 秒');setText('home-value',getOrbValue().toFixed(2));setText('home-bonus','+'+Math.round(gameData.collectedFragments.length+gameData.completedStories.length*10+gameData.babelOrbBonus)+'%');
-    const first=gameData.frogSpeedLevel===0, unread=gameData.unlockedBooks.length===0;
+    const first=gameData.speedUpgradeCount===0, unread=gameData.unlockedBooks.length===0;
     setText('goal-title',first?'培养你的守馆者':unread?'翻开第一本藏书':'继续你的旅程');
-    setText('goal-description',first?'积攒 15 点方向感，缩短自动收集间隔。':unread?'用 30 点方向感开启一卷藏书，寻找有意义的句子。':'故事片段和试炼胜利都会提升收益。食料培养保留已升级的收集速度。');
+    setText('goal-description',first?'积攒 15 点方向感，缩短自动收集间隔。':unread?'用 30 点方向感开启一卷藏书，寻找有意义的句子。':'故事片段和试炼胜利都会提升收益。食料进阶会提升光团价值，并将速度归位，需要重新训练。');
     const cost=first?15:unread?30:gameData.frogSpeedLevel<10?getSpeedCost():getValueCost();
     document.getElementById('goal-progress').max=cost;document.getElementById('goal-progress').value=Math.max(0,gameData.directionSense);
     document.getElementById('goal-action').innerHTML=(first?'培养青蛙':unread?'探索藏书':'培养青蛙')+' <span>↗</span>';
+    setText('frog-cycle','第 '+(gameData.valueUpgradeCount+1)+' 轮训练');
+    document.getElementById('frog').dataset.stage=String(Math.min(2,gameData.valueUpgradeCount));
+    setText('food-preview',`升级后：每团 ${((2+gameData.frogValueLevel)*(getOrbValue()/(1+gameData.frogValueLevel))).toFixed(2)} 方向感，间隔回到 7.5 秒；速度重新训练。`);
     checkImmediateEndings();
 }
 function triggerEnding(title,desc){document.getElementById('screen-ending').style.display='flex';setText('ending-title',title);setText('ending-desc',desc);if(!gameData.achievedEndings.includes(title))gameData.achievedEndings.push(title);saveGame();}
@@ -34,9 +37,9 @@ document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>navigate(b.datase
 document.querySelectorAll('.close-btn[data-target]').forEach(b=>b.onclick=()=>closeModal(b.dataset.target));
 document.getElementById('frog').onclick=()=>{updateUI();openModal('modal-frog');};
 document.getElementById('btn-personal').onclick=()=>{setText('personal-collection-count',gameData.collectedFragments.length);setText('personal-babel-floor',gameData.babelFloor);setText('personal-book-count',gameData.unlockedBooks.length);openModal('modal-personal');};
-for(const type of ['speed','value'])document.getElementById('upg-'+type).onclick=()=>{if(BabelRules.upgrade(gameData,type)){saveGame();updateUI();if(typeof toast==='function')toast(type==='speed'?'收集速度已提升':'光团价值已提升，收集速度保留');}};
+for(const type of ['speed','value'])document.getElementById('upg-'+type).onclick=()=>{if(BabelRules.upgrade(gameData,type)){collectRemainder=0;saveGame();updateUI();if(typeof toast==='function')toast(type==='speed'?'收集速度已提升':'食料已进阶，速度归位至 7.5 秒，可重新训练');}};
 document.getElementById('btn-backtrack').onclick=()=>{closeModal('modal-personal');showMessageModal('确认回溯','方向感、培养等级、藏书与试炼进度将重置。故事收藏与结局记录会保留。',true,()=>{const complete=c=>storyData[c].every(s=>s.sentences.every(t=>gameData.collectedFragments.includes(t)));triggerEnding(complete('思考')?'挑剔':complete('构想')?'理想':'放弃','这段旅程已经结束。接受命运后重新出发，你的故事收藏会被保留。');});};
-document.getElementById('btn-reset-game').onclick=()=>{const old=gameData;gameData=BabelRules.fresh();gameData.achievedEndings=old.achievedEndings;gameData.collectionFragments=[...new Set([...old.collectionFragments,...old.collectedFragments])];gameData.collectionStories=[...new Set([...old.collectionStories,...old.completedStories])];gameData.resetCount=old.resetCount+1;saveGame();location.reload();};
+document.getElementById('btn-reset-game').onclick=()=>{const old=gameData;gameData=BabelRules.fresh();gameData.achievedEndings=old.achievedEndings;gameData.collectionFragments=[...new Set([...old.collectionFragments,...old.collectedFragments])];gameData.collectionStories=[...new Set([...old.collectionStories,...old.completedStories])];gameData.resetCount=old.resetCount+1;gameData.tutorial=old.tutorial;saveGame();location.reload();};
 const MAX_ORBS_ON_SCREEN=5;
 function spawnOrb(){const field=document.getElementById('orb-field');if(field.querySelectorAll('.orb').length>=MAX_ORBS_ON_SCREEN)return;const orb=document.createElement('button');orb.className='orb';orb.setAttribute('aria-label','收集光团');orb.style.left=(15+Math.random()*70)+'%';orb.style.top=(38+Math.random()*28)+'%';orb.onclick=()=>{if(!orb.isConnected)return;const value=BabelRules.award(gameData,1);const feedback=document.createElement('span');feedback.className='gain-float';feedback.textContent='+'+value.toFixed(2);feedback.style.left=orb.style.left;feedback.style.top=orb.style.top;field.appendChild(feedback);setTimeout(()=>feedback.remove(),1000);orb.remove();updateUI();saveGame();};field.appendChild(orb);setTimeout(()=>orb.remove(),14000);}
 // Economy follows elapsed time; visual orbs are a manual collection bonus.

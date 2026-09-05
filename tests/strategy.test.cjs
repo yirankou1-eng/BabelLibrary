@@ -6,32 +6,29 @@ const B = require('../battle-engine.js');
 const C = require('../room-code.js');
 const ids = B.cards.map(c => c.id);
 
-test('drafts are stable across refresh and offer five distinct choices', () => {
+test('preparation keeps only the floor and selected trial route', () => {
     const data = R.fresh();
     const a = S.preparation(data, ids);
-    const b = S.preparation(data, ids);
-    assert.deepEqual(a, b);
-    assert.equal(new Set(a.offers).size, 5);
+    assert.deepEqual(a, { floor: 1, route: 'standard' });
+    assert.equal('offers' in a, false);
+    assert.equal('selected' in a, false);
     assert.ok(S.canStart(a));
 });
-test('draft choices survive save migration', () => {
+test('the selected route survives refresh but resets on the next floor', () => {
     const data = R.fresh();
-    data.battlePreparation = S.preparation(data, ids);
-    data.battlePreparation.selected = data.battlePreparation.offers.slice(2, 5);
-    data.battlePreparation.route = 'silence';
-    const loaded = R.normalize(JSON.parse(JSON.stringify(data)));
-    assert.deepEqual(S.preparation(loaded, ids), data.battlePreparation);
+    data.battlePreparation = { floor: 1, route: 'silence', offers: ids.slice(0, 5), selected: ids.slice(0, 3) };
+    assert.deepEqual(S.preparation(data, ids), { floor: 1, route: 'silence' });
+    data.babelFloor = 2;
+    assert.deepEqual(S.preparation(data, ids), { floor: 2, route: 'standard' });
 });
-test('incomplete, duplicated and invented selections cannot begin combat', () => {
-    const p = S.preparation(R.fresh(), ids);
-    p.selected = ['combat']; assert.equal(S.canStart(p), false);
-    p.selected = ['combat', 'combat', 'combat']; assert.equal(S.canStart(p), false);
-    p.selected = ['fake', 'faith', 'pleasure']; assert.equal(S.canStart(p), false);
+test('invented trial routes cannot begin combat', () => {
+    assert.equal(S.canStart({ floor: 1, route: 'invented' }), false);
+    assert.equal(S.canStart({ floor: 1, route: 'forbidden' }), true);
 });
-test('forbidden trial increases HP and payouts in their declared ratios', () => {
+test('forbidden trial increases HP without granting an instant currency payout', () => {
     const s = B.create(1, 'card', ['combat', 'faith', 'crime'], ['combat', 'crime', 'service'], 10, 'forbidden');
     assert.equal(s.enemy.maxHp, 12.5);
-    assert.deepEqual(S.rewards(1, 'card', 'forbidden'), { direction: 40, orb: 7 });
+    assert.deepEqual(S.rewards(1, 'card', 'forbidden'), { direction: 0, orb: 7 });
 });
 test('silence blocks both sides healing and increases direct damage', () => {
     const s = B.create(1, 'card', ['combat', 'pleasure', 'crime'], ['combat', 'pleasure', 'crime'], 10, 'silence');
@@ -49,7 +46,7 @@ test('study to research grants an extra research step without revealing enemies'
     const p = B.entity('p', 30, []), e = B.entity('e', 30, []);
     B.execute('study', p, e); B.execute('research', p, e);
     assert.equal(p.research, 2);
-    B.execute('research', p, e); assert.equal(p.research, 0); assert.equal(e.hp, 18);
+    B.execute('research', p, e); assert.equal(p.research, 0); assert.equal(e.hp, 19);
 });
 test('education to crime increases outgoing damage and incoming risk', () => {
     const p = B.entity('p', 30, []), e = B.entity('e', 30, []);
