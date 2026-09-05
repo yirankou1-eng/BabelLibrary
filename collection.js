@@ -98,7 +98,7 @@ function renderStories() {
     // 合并当前与永久收集的片段
     let allFragments = new Set([...(gameData.collectionFragments || []), ...(gameData.collectedFragments || [])]);
 
-    if (!typeof storyData !== 'undefined') {
+    if (typeof storyData !== 'undefined') {
         for (let category in storyData) {
             let catDiv = document.createElement('div');
             catDiv.innerHTML = `<h4 style="color:#ff6b6b; margin: 15px 0 5px 0; border-bottom: 1px solid #444; padding-bottom:3px;">词条：【${category}】</h4>`;
